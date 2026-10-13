@@ -1,4 +1,16 @@
-# Proyecto 3 · Clasificador de imágenes integrado al portal
+# Proyecto 4 · Clasificación optimizada en edge
+
+Este repositorio continúa el portal y el clasificador terminados en el Proyecto 3. El objetivo
+del Proyecto 4 es optimizar ese mismo modelo, ejecutarlo localmente en un dispositivo edge con
+cámara y mostrar en **Capturas Edge** las fotografías y resultados persistidos en AWS.
+
+El alcance, reparto inicial y criterios de cierre están en
+[docs/PLAN_PROYECTO_4.md](docs/PLAN_PROYECTO_4.md). La documentación siguiente conserva la
+línea base del Proyecto 3 para mantener su trazabilidad.
+
+---
+
+## Línea base heredada: Proyecto 3
 
 Clasificación multiclase de **un objeto por imagen**, entrenada sobre recortes de las cajas
 COCO del dataset aprobado del Proyecto 2. Incluye experimentos registrados en MLflow,
