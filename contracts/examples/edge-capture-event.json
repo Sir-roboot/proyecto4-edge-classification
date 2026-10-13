@@ -1,0 +1,15 @@
+{
+  "capture_id": "6f5c1f7e-1b2a-4c3d-9e4f-0a1b2c3d4e5f",
+  "captured_at": "2026-10-13T14:05:37.482-06:00",
+  "device_id": "rpi-edge-01",
+  "model_version": "onnx-int8-1.0.0+sha256:9f2c4d1e7a8b0c3f5e6d9a2b4c8f1e0d7a3b5c9e2f4a6d8b0c1e3f5a7b9d2c4e",
+  "predicted_class": "person",
+  "confidence": 0.9734,
+  "image_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "crop": {
+    "x": 120,
+    "y": 64,
+    "width": 320,
+    "height": 240
+  }
+}

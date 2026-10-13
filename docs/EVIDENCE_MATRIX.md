@@ -1,0 +1,54 @@
+# Matriz de evidencias — Proyecto 4
+
+Esta matriz sigue el prompt oficial de evaluación. Una afirmación solo cambia a
+`LISTA` cuando existe el archivo, URL, registro o paso observable indicado. `PENDIENTE`
+no significa que el criterio falle: identifica trabajo que todavía debe entregarse.
+
+## Compuertas obligatorias
+
+| Compuerta | Evidencia verificable | Responsable | Estado |
+| --- | --- | --- | --- |
+| M1 — variante del modelo propio | Referencia del modelo de Proyecto 3, mapa de clases, registro de conversión, artefactos original/optimizado y sus SHA-256 | Luis Víctor | PENDIENTE |
+| M2 — cámara e inferencia local | Raspberry y cámara identificadas; captura nueva; modelo cargado; clasificación de ambas clases con la red desconectada | Andrés | PENDIENTE |
+| M3 — AWS y portal | Un mismo `capture_id` seguido desde el dispositivo hasta el registro/imagen en AWS y Capturas Edge | Santiago + Ignacio | PENDIENTE |
+
+Si alguna compuerta queda sin demostración, el prompt limita la calificación definitiva a 60 puntos.
+
+## Rúbrica base
+
+| Criterio | Evidencia que debe quedar enlazada | Responsable principal | Estado |
+| --- | --- | --- | --- |
+| 1.1 | Manifiesto del modelo original: versión, run, clases, preprocesamiento y hash | Luis Víctor | PENDIENTE |
+| 1.2 | Script/configuración reproducible, log de conversión y variante cargable en la Raspberry | Luis Víctor | PENDIENTE |
+| 1.3 | Mismo manifiesto de validación, predicciones por muestra, accuracy/F1 por clase y explicación de errores | Luis Víctor | PENDIENTE |
+| 2.1 | Identificación de Raspberry/cámara y capturas nuevas observables | Andrés | PENDIENTE |
+| 2.2 | Resolución, canales, normalización, cuantización/recorte y entradas conocidas | Andrés + Luis Víctor | PENDIENTE |
+| 2.3 | Inferencia con la variante en el dispositivo y prueba con red desconectada | Andrés | PENDIENTE |
+| 2.4 | Registro de 20 capturas, cinco minutos de operación y captura posterior a reinicio | Andrés | PENDIENTE |
+| 3.1 | Hardware, runtime, precisión, entrada y condiciones equivalentes documentadas | Luis Víctor + Andrés | PENDIENTE |
+| 3.2 | Tamaños, 10 calentamientos, 100 tiempos válidos y cálculo reproducible de p50/p95 | Luis Víctor + Andrés | PENDIENTE |
+| 3.3 | Comparación cuantitativa y decisión sobre intercambio recursos/calidad | Luis Víctor | PENDIENTE |
+| 4.1 | Evento completo enlazado a la fotografía mediante ID y SHA-256 | Santiago + Andrés | PENDIENTE |
+| 4.2 | Recurso AWS identificado y consulta de solo lectura que recupere registro e imagen | Santiago | PENDIENTE |
+| 4.3 | Fallo reversible, mensaje visible, reintento del mismo ID y comprobación de no duplicado | Santiago + Andrés | PENDIENTE |
+| 5.1 | Capturas Edge accesible desde el portal previo y desplegado en AWS | Ignacio | PENDIENTE |
+| 5.2 | Imagen y metadatos reales coincidentes, ordenados de reciente a antiguo | Ignacio | PENDIENTE |
+| 5.3 | Actualización, carga, vacío y error verificables | Ignacio | PENDIENTE |
+| 6.1 | README/ficha con instalación, arranque, recuperación de artefactos y recorrido | Santiago + todos | PENDIENTE |
+| 6.2 | Pasos repetibles para conversión, inferencia conocida y evento enviado/recuperado; cinco IDs contrastados | Santiago + todos | PENDIENTE |
+| 6.3 | Configuración de ejemplo sin secretos, identidad del dispositivo, artefacto y destino AWS documentados | Santiago | EN PROGRESO — contrato publicado |
+
+## Evidencia ya disponible
+
+| Elemento | Ubicación | Qué demuestra |
+| --- | --- | --- |
+| Contrato normativo del evento | `contracts/edge-capture-event.schema.json` | Forma y restricciones de la metadata enviada por el edge |
+| Fixture compartido | `contracts/examples/edge-capture-event.json` | Entrada válida para edge, backend y portal |
+| Contrato HTTP e idempotencia | `docs/EDGE_CAPTURE_CONTRACT.md` | Multipart, límites, respuestas, hash y reintentos |
+| Línea base y reparto | `docs/PLAN_PROYECTO_4.md` | Modelo previo, responsables, prioridades, fechas y compuertas |
+
+## Control de cierre
+
+Antes de la entrega, cada fila marcada `LISTA` debe apuntar a una ruta, una URL o un
+paso de demostración concreto. Para M3 se contrastarán al menos cinco `capture_id` en
+dispositivo, AWS y portal. El video es opcional y no sustituye los 100 puntos base.

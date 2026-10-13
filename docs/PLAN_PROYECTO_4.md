@@ -153,6 +153,9 @@ variante; no se pierde un día defendiendo una herramienta.
 
 ## 9. Compuertas y definición global de terminado
 
+La evidencia y su responsable se controlan en `docs/EVIDENCE_MATRIX.md`; ninguna fila se marca
+como lista únicamente por una descripción verbal.
+
 La entrega no se considera terminada si falta cualquiera de estas tres compuertas:
 
 - **M1:** la variante desplegada procede del modelo propio del Proyecto 3;
