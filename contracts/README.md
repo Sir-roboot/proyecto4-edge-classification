@@ -34,6 +34,46 @@ Data Quality y MLOps antes de mergear, y quedar reflejado en este README.
   tiempo de versiones semánticas, hash de contenido, estado de
   sincronización DEV (MinIO) / PROD (S3), y diff entre versión actual y
   anterior. Lo consume la pantalla **Versions**.
+- `edge-capture-event.schema.json` — JSON Schema **draft 2020-12** de la
+  metadata del evento de captura edge (entrada de
+  `POST /api/edge-captures`). Es un contrato **normativo**, no un mock
+  (ver "Contrato de Capturas Edge (P4-0.1)" más abajo).
+- `examples/edge-capture-event.json` — ejemplo válido contra ese schema,
+  usado por el edge, el backend y la sección **Capturas Edge** como
+  fixture de referencia.
+
+## Contrato de Capturas Edge (P4-0.1)
+
+`P4-0.1` congela el **contrato del evento de captura edge** y el contrato
+de ingesta `POST /api/edge-captures`, antes de implementar edge, AWS y la
+sección **Capturas Edge** del portal. A diferencia de `quality.json` /
+`splits.json` / `versions.json` (que siguen siendo salidas ilustrativas
+del pipeline), estos dos archivos son **normativos**: la forma que
+declaran se debe respetar.
+
+- `contracts/edge-capture-event.schema.json`: JSON Schema **draft
+  2020-12** (`$schema` = `https://json-schema.org/draft/2020-12/schema`)
+  con `additionalProperties: false`. Campos obligatorios: `capture_id`
+  (UUID), `captured_at` (RFC 3339 **con zona horaria**), `device_id` y
+  `model_version` no vacíos, `predicted_class` ∈ {`car`, `person`},
+  `confidence` en `[0, 1]`, `image_sha256` (64 hex minúsculas). `crop` es
+  **opcional** (`x, y >= 0`; `width, height > 0`).
+- `contracts/examples/edge-capture-event.json`: ejemplo válido contra el
+  schema de entrada.
+
+El schema de **entrada** NO incluye `received_at` ni `image_key`: los
+asigna el servidor al persistir en AWS y solo aparecen en la **respuesta**
+de ingesta, junto con `capture_id`.
+
+La ingesta es `multipart/form-data` con la metadata JSON y la imagen
+(`image/jpeg` o `image/png`, máximo 10 MiB). La idempotencia se ancla en
+`capture_id`: primera ingesta → `201`; reintento con el mismo
+`capture_id` y contenido idéntico → `200` sin duplicar; mismo
+`capture_id` con contenido distinto → `409`. También se documentan `400`,
+`413`, `415` y `422`.
+
+Detalle completo (tabla de campos, códigos de estado e idempotencia):
+[`docs/EDGE_CAPTURE_CONTRACT.md`](../docs/EDGE_CAPTURE_CONTRACT.md).
 
 ## Reconciliación con DQ-02
 
