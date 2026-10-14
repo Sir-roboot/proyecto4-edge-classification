@@ -5,8 +5,7 @@ import sharp from 'sharp';
 
 import { db, pool } from './db/client.js';
 import { categories, images } from './db/schema.js';
-import { minioBucket, minioClient } from './storage/minio.client.js';
-import { ensureMinioBucket } from './storage/minio.storage.js';
+import { ensureObjectStoreBucket, uploadImageObject } from './storage/object-store.storage.js';
 
 /**
  * Categorías de ejemplo.
@@ -62,7 +61,8 @@ async function seedCategoryData(): Promise<void> {
 }
 
 /**
- * Genera imágenes simples, las guarda en MinIO y registra sus metadatos.
+ * Genera imágenes simples, las guarda en el almacén de objetos y registra sus
+ * metadatos.
  */
 async function seedImageData(): Promise<void> {
   for (const image of seedImages) {
@@ -77,10 +77,8 @@ async function seedImageData(): Promise<void> {
       .png()
       .toBuffer();
 
-    // putObject sobre la misma key reemplaza el objeto, no crea duplicados.
-    await minioClient.putObject(minioBucket, image.storageKey, buffer, buffer.length, {
-      'Content-Type': 'image/png',
-    });
+    // PutObject sobre la misma key reemplaza el objeto, no crea duplicados.
+    await uploadImageObject(image.storageKey, buffer, 'image/png');
 
     const existing = await db
       .select({ id: images.id })
@@ -106,7 +104,7 @@ async function seedImageData(): Promise<void> {
  * Ejecuta el seeder completo.
  */
 async function seed(): Promise<void> {
-  await ensureMinioBucket();
+  await ensureObjectStoreBucket();
 
   await seedCategoryData();
   await seedImageData();

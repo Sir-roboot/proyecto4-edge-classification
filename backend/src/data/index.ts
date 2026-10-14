@@ -1,7 +1,8 @@
 /**
  * Punto de entrada de la capa DATA.
  *
- * Maneja el acceso a MariaDB y al almacenamiento de archivos en MinIO.
+ * Maneja el acceso a MariaDB y al almacenamiento de archivos en un almacén
+ * de objetos S3-compatible (MinIO en local, S3 en AWS).
  * Solo la capa Logic debe importar desde aquí.
  */
 export { db, pool } from './db/client.js';
@@ -42,10 +43,10 @@ export {
   findRecentImages,
   updateImageStatus,
 } from './repositories/image.repository.js';
-// Funciones de almacenamiento en MinIO.
+// Funciones de almacenamiento en el object store (S3-compatible).
 export {
   deleteImageObject,
-  ensureMinioBucket,
+  ensureObjectStoreBucket,
   getImageObjectStream,
   uploadImageObject,
-} from './storage/minio.storage.js';
+} from './storage/object-store.storage.js';

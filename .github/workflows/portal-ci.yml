@@ -27,10 +27,12 @@ jobs:
     # docker-compose development values, no secrets (tests never reach a database).
     env:
       DATABASE_URL: mysql://root:password@localhost:3306/image_repo
-      MINIO_ENDPOINT: localhost
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET: image-annotations
+      OBJECT_STORE_BUCKET: image-annotations
+      OBJECT_STORE_REGION: us-east-1
+      OBJECT_STORE_ENDPOINT_URL: http://localhost:9000
+      OBJECT_STORE_FORCE_PATH_STYLE: "true"
+      OBJECT_STORE_ACCESS_KEY: minioadmin
+      OBJECT_STORE_SECRET_KEY: minioadmin
       MAX_UPLOAD_SIZE_BYTES: "5242880"
     steps:
       - uses: actions/checkout@v4

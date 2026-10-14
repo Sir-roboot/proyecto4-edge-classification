@@ -1,7 +1,7 @@
 {
   "name": "image-annotation-repo",
   "version": "0.1.0",
-  "description": "Backend del portal de anotación de imágenes (UI → Logic → Data, MariaDB + MinIO)",
+  "description": "Backend del portal de anotación de imágenes (UI → Logic → Data, MariaDB + object store S3-compatible)",
   "main": "dist/ui/server.js",
   "scripts": {
     "test": "vitest run",
@@ -26,11 +26,11 @@
   "type": "module",
   "private": true,
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1151.0",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
     "js-yaml": "^5.4.2",
-    "minio": "^8.0.7",
     "multer": "^2.3.0",
     "mysql2": "^3.24.2",
     "sharp": "^0.35.4",
