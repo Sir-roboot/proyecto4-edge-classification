@@ -1,0 +1,52 @@
+# P4-2.1 — Contexto de build del contenedor consolidado de App Runner.
+#
+# La imagen se construye desde la RAÍZ del repo (`docker build -f
+# Dockerfile.apprunner .`), así que este `.dockerignore` evita mandar al daemon
+# todo lo que nunca debe entrar a la imagen: repositorio Git, entornos reales,
+# secretos, dependencias del host, cachés de DVC y artefactos de build.
+
+# ── Git / metadatos del repo
+.git
+.gitignore
+.gitattributes
+.github
+
+# ── Entornos y secretos: nunca entran a la imagen
+.env
+.env.*
+!.env.example
+!.env.production.example
+*.pem
+*.key
+
+# ── Dependencias del host (se instalan dentro de cada etapa)
+**/node_modules
+**/dist
+**/build
+
+# ── Cachés y datos de la pipeline que NO se necesitan en runtime
+pipeline/.dvc/cache
+pipeline/.dvc/tmp
+pipeline/data/raw
+pipeline/data/processed
+pipeline/artifacts
+pipeline/mlruns
+pipeline/mlartifacts
+pipeline/mlflow-data
+pipeline/mlflow.db
+**/*.pt
+**/*.pth
+**/*.ckpt
+
+# ── Logs y archivos de sistema
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# ── Ruido de documentación / infra que la imagen no usa en runtime
+infra
+docs
+scripts
+*.docx
+/README.md

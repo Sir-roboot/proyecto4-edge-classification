@@ -19,6 +19,7 @@ Thumbs.db
 # Caché de herramientas
 .vite/
 coverage/
+.tools/
 
 # Python (pipeline/)
 __pycache__/

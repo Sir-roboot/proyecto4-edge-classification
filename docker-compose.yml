@@ -59,6 +59,12 @@ services:
       OBJECT_STORE_ACCESS_KEY: minioadmin
       OBJECT_STORE_SECRET_KEY: minioadmin
       RUN_DB_SEED: "true"
+      # P4-2.1 — Token compartido de la ingesta edge (contrato §3): el
+      # dispositivo lo envía como `Authorization: Bearer <token>`. Obligatorio
+      # y de al menos 32 caracteres; el backend falla al arrancar si falta.
+      # Valor FICTICIO y NO secreto: sirve para desarrollo local y CI, nunca
+      # para un despliegue real (ahí vive en Secrets Manager).
+      EDGE_INGEST_TOKEN: local-dev-edge-ingest-token-000000000001
       MAX_UPLOAD_SIZE_BYTES: 5242880
       MLFLOW_TRACKING_URI: http://mlflow:5000
       CLASSIFIER_INFERENCE_URL: http://classifier-inference:8300

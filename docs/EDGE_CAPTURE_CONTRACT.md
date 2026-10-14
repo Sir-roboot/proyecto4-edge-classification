@@ -77,6 +77,30 @@ La operación es **multipart/form-data** con exactamente dos partes:
 | Metadata | `metadata` | `application/json` (texto) | Un documento JSON que valida contra `edge-capture-event.schema.json`. |
 | Imagen | `image` | `image/jpeg` o `image/png` | Bytes de la captura. Máximo **10 MiB** (10 × 1024 × 1024 = 10 485 760 bytes). |
 
+### 3.0 Autenticación obligatoria
+
+La operación está **protegida**: el dispositivo debe enviar el token compartido
+en el encabezado `Authorization`:
+
+```
+Authorization: Bearer <EDGE_INGEST_TOKEN>
+```
+
+Reglas:
+
+- El token es el configurado en el backend como `EDGE_INGEST_TOKEN`
+  (mínimo **32 caracteres**); en AWS vive en Secrets Manager y **nunca** viaja
+  en el cuerpo ni en la URL.
+- La comparación es **en tiempo constante** y ocurre **antes** de procesar el
+  multipart: una petición sin token válido se rechaza con `401` **sin leer ni
+  persistir** la captura.
+- El backend nunca registra ni devuelve el token.
+
+> El nombre interno `POST /edge-captures` (sin `/api/`) es un alias del mismo
+> handler para el nginx del contenedor consolidado, que quita el prefijo
+> `/api/`. No es una segunda API pública: usa la misma autenticación y el mismo
+> contrato.
+
 Reglas adicionales:
 
 - La parte `metadata` no debe exceder **4 KiB** de JSON (4096 bytes); una
@@ -94,6 +118,7 @@ Reglas adicionales:
 
 ```bash
 curl -i -X POST https://<host>/api/edge-captures \
+  -H "Authorization: Bearer $EDGE_INGEST_TOKEN" \
   -F 'metadata={"capture_id":"6f5c1f7e-1b2a-4c3d-9e4f-0a1b2c3d4e5f","captured_at":"2026-10-13T14:05:37.482-06:00","device_id":"rpi-edge-01","model_version":"onnx-int8-1.0.0+sha256:9f2c4d1e7a8b0c3f5e6d9a2b4c8f1e0d7a3b5c9e2f4a6d8b0c1e3f5a7b9d2c4e","predicted_class":"person","confidence":0.9734,"image_sha256":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","crop":{"x":120,"y":64,"width":320,"height":240}};type=application/json' \
   -F 'image=@captura.jpg;type=image/jpeg'
 ```
@@ -121,6 +146,7 @@ para recuperar la imagen.
 
 | Código | Situación | Efecto |
 | --- | --- | --- |
+| **401 Unauthorized** | Falta el encabezado `Authorization`, no usa el esquema `Bearer` o el token no coincide con `EDGE_INGEST_TOKEN`. | Se rechaza **antes** de leer el multipart; no se persiste nada. El cuerpo del error no revela el motivo exacto. |
 | **201 Created** | **Primera ingesta** de un `capture_id` nuevo, metadata válida e imagen válida. | Se persiste el evento y la imagen; se devuelve la respuesta de la sección 4. |
 | **200 OK** | **Reintento idempotente**: llega un `capture_id` ya persistido y el contenido es **idéntico** (mismo `image_sha256`, mismos metadatos). | **No** se duplica el registro ni la fotografía lógica; se devuelve el registro existente. |
 | **409 Conflict** | Llega un `capture_id` ya persistido pero con **contenido diferente** (hash de imagen distinto o metadatos distintos). | Se rechaza: un mismo `capture_id` no puede describir dos capturas. El edge debe generar un `capture_id` nuevo para una captura nueva. |

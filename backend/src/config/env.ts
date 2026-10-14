@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { z } from 'zod';
+import { EDGE_INGEST_TOKEN_MIN_LENGTH } from './edge-auth.js';
 
 /**
  * Valida las variables de entorno usadas por la aplicación.
@@ -46,6 +47,20 @@ const envSchema = z.object({
     .int()
     .positive()
     .default(5 * 1024 * 1024),
+
+  // P4-2.1 — Token compartido de la ingesta edge.
+  //
+  // Obligatorio: sin él, `POST /api/edge-captures` (y su alias interno
+  // `POST /edge-captures`) no se puede autenticar, así que la aplicación falla
+  // al arrancar en vez de aceptar escrituras anónimas. El valor real vive en
+  // Secrets Manager (App Runner) o en `.env` local; aquí solo se exige una
+  // longitud mínima. Nunca se registra ni se devuelve en respuestas.
+  EDGE_INGEST_TOKEN: z
+    .string()
+    .min(
+      EDGE_INGEST_TOKEN_MIN_LENGTH,
+      `EDGE_INGEST_TOKEN debe tener al menos ${EDGE_INGEST_TOKEN_MIN_LENGTH} caracteres.`,
+    ),
 
   // Servicio Python interno. La URL nunca se recibe desde una solicitud HTTP:
   // se fija al desplegar el backend para evitar convertir la inferencia en un

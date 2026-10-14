@@ -1,0 +1,106 @@
+# P4-2.1 — Imagen consolidada del portal + backend para AWS App Runner.
+#
+# Un único contenedor que sirve la SPA compilada y la API (nginx al frente en
+# :8080, backend Node interno en :3100 y su proxy /api/ quitando el prefijo,
+# igual que el nginx local de frontend/docker/nginx.conf).
+#
+# Build multi-stage: (1) frontend → SPA estática; (2) backend → JS compilado;
+# (3) runtime Node 20 slim + nginx que junta ambos.
+#
+# El contexto de build es la RAÍZ del repo (ver `.dockerignore` raíz), porque
+# se necesitan backend/, frontend/, pipeline/ (contratos + modelo seleccionado)
+# y contracts/.
+
+# ── Etapa 1: frontend ───────────────────────────────────────────────────────
+FROM node:20-slim AS frontend-build
+
+WORKDIR /app
+
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
+COPY frontend/ ./
+
+# El portal llama a la API en `/api` (ver frontend/src/api/client.ts). En App
+# Runner el mismo nginx del contenedor recibe `/api/` y quita el prefijo.
+ARG VITE_API_BASE_URL=/api
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
+
+RUN npm run build
+
+# ── Etapa 2: backend ────────────────────────────────────────────────────────
+FROM node:20-slim AS backend-build
+
+WORKDIR /app
+
+COPY backend/package.json backend/package-lock.json ./
+RUN npm ci
+
+COPY backend/ ./
+RUN npm run build
+
+# ── Etapa 3: runtime (Node 20 slim + nginx) ─────────────────────────────────
+FROM node:20-slim AS runtime
+
+# nginx sirve la SPA y hace de proxy hacia el backend. slim no lo trae.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends nginx ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+ENV NODE_ENV=production
+
+WORKDIR /app
+
+# Solo dependencias de producción. El entrypoint aplica los SQL versionados con
+# `drizzle-orm/mysql2/migrator`; `drizzle-kit` queda fuera de la imagen y se usa
+# únicamente al desarrollar/generar migraciones.
+COPY backend/package.json backend/package-lock.json ./
+RUN npm ci --omit=dev
+
+COPY --from=backend-build /app/dist ./dist
+
+# El migrador de runtime necesita los archivos SQL (tsc no los emite).
+COPY backend/src/data/db/migrations/ ./src/data/db/migrations/
+
+# Código y plantillas del entrypoint (preparación de DATABASE_URL + scripts).
+COPY backend/docker/ ./docker/
+
+# Entrypoint de App Runner (prepara entorno, espera la base, migra, seed
+# opcional y arranca backend + nginx).
+COPY docker/apprunner/entrypoint.sh ./docker/apprunner/entrypoint.sh
+
+# Configuración de nginx del contenedor consolidado (un solo puerto, :8080).
+COPY docker/apprunner/nginx.conf /etc/nginx/conf.d/default.conf
+RUN rm -f /etc/nginx/sites-enabled/default
+
+# La SPA compilada en la etapa 1.
+COPY --from=frontend-build /app/dist ./frontend-dist
+
+# Contratos y salidas de la pipeline que el backend necesita LEER en runtime:
+#  - contracts/                       → mock versionado de APP-01/APP-05
+#  - pipeline/reports/classifier/     → selected-model.json (qué modelo usar)
+#  - pipeline/data/interim/           → quality.json/splits.json/versions.json
+#  - pipeline/quality.yaml            → política de la Quality Gate
+# Se copian SOLO estos archivos, nunca .git, .env, cachés de DVC ni secretos.
+RUN mkdir -p /pipeline/reports/classifier /pipeline/data/interim /data
+COPY contracts/ /contracts/
+COPY pipeline/quality.yaml /pipeline/quality.yaml
+COPY pipeline/reports/classifier/ /pipeline/reports/classifier/
+COPY pipeline/data/interim/ /pipeline/data/interim/
+
+# Rutas por defecto dentro del contenedor (App Runner puede sobreescribirlas
+# con variables de entorno del servicio).
+ENV SELECTED_MODEL_PATH=/pipeline/reports/classifier/selected-model.json \
+    CLASSIFIER_REPORTS_DIR=/pipeline/reports/classifier \
+    CLASSIFIER_DATA_ROOT=/pipeline \
+    PIPELINE_OUTPUT_DIR=/pipeline/data/interim \
+    QUALITY_POLICY_PATH=/pipeline/quality.yaml
+
+RUN chmod +x docker/apprunner/entrypoint.sh
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:8080/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
+ENTRYPOINT ["docker/apprunner/entrypoint.sh"]
