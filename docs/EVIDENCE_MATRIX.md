@@ -28,14 +28,14 @@ Si alguna compuerta queda sin demostración, el prompt limita la calificación d
 | 3.1 | Hardware, runtime, precisión, entrada y condiciones equivalentes documentadas | Luis Víctor + Andrés | PENDIENTE |
 | 3.2 | Tamaños, 10 calentamientos, 100 tiempos válidos y cálculo reproducible de p50/p95 | Luis Víctor + Andrés | PENDIENTE |
 | 3.3 | Comparación cuantitativa y decisión sobre intercambio recursos/calidad | Luis Víctor | PENDIENTE |
-| 4.1 | Evento completo enlazado a la fotografía mediante ID y SHA-256 | Santiago + Andrés | EN PROGRESO — contrato y persistencia local verificados (`docs/P4-2-1_LOCAL_INGESTION_EVIDENCE.md`); falta contrastar el evento real de la Raspberry en AWS |
-| 4.2 | Recurso AWS identificado y consulta de solo lectura que recupere registro e imagen | Santiago | EN PROGRESO — lectura de fila/objeto comprobada en MariaDB/MinIO local; el recurso y la prueba de lectura en AWS siguen pendientes |
-| 4.3 | Fallo reversible, mensaje visible, reintento del mismo ID y comprobación de no duplicado | Santiago + Andrés | EN PROGRESO — `201`, reintento `200`, conflicto `409` y una sola fila verificados localmente; falta el fallo de envío reversible desde el edge |
+| 4.1 | Evento completo enlazado a la fotografía mediante ID y SHA-256 | Santiago + Andrés | EN PROGRESO — contrato y persistencia local verificados, más ingesta `201`/`200`/`409` contra el AWS real y `head-object` del objeto S3 (`docs/P4-2-1_LOCAL_INGESTION_EVIDENCE.md`, `docs/p4-2-1-aws-smoke.json`); el evento de prueba usó el fixture `confusion_matrix.png` con `device_id` `p4-2-1-verifier`, no la Raspberry |
+| 4.2 | Recurso AWS identificado y consulta de solo lectura que recupere registro e imagen | Santiago | EN PROGRESO — bucket S3 `edge-captures-dev-685538571046` identificado y lectura del objeto confirmada con `head-object` (key, 10,994 bytes, `image/png`); falta la lectura **directa** de la fila en RDS y un endpoint `GET` de solo lectura |
+| 4.3 | Fallo reversible, mensaje visible, reintento del mismo ID y comprobación de no duplicado | Santiago + Andrés | EN PROGRESO — `201`, reintento `200` y conflicto `409` verificados localmente y contra el AWS real (el `200` demuestra lectura indirecta de la fila ya persistida); falta el fallo de envío reversible desde el edge |
 | 5.1 | Capturas Edge accesible desde el portal previo y desplegado en AWS | Ignacio | PENDIENTE |
 | 5.2 | Imagen y metadatos reales coincidentes, ordenados de reciente a antiguo | Ignacio | PENDIENTE |
 | 5.3 | Actualización, carga, vacío y error verificables | Ignacio | PENDIENTE |
 | 6.1 | README/ficha con instalación, arranque, recuperación de artefactos y recorrido | Santiago + todos | PENDIENTE |
-| 6.2 | Pasos repetibles para conversión, inferencia conocida y evento enviado/recuperado; cinco IDs contrastados | Santiago + todos | EN PROGRESO — recorrido local de un evento documentado; faltan conversión, inferencia física y cinco IDs contrastados en AWS/portal |
+| 6.2 | Pasos repetibles para conversión, inferencia conocida y evento enviado/recuperado; cinco IDs contrastados | Santiago + todos | EN PROGRESO — recorrido local de un evento y un `capture_id` contrastado contra AWS documentados; faltan conversión, inferencia física y el contraste en el portal de cinco IDs |
 | 6.3 | Configuración de ejemplo sin secretos, identidad del dispositivo, artefacto y destino AWS documentados | Santiago | EN PROGRESO — contrato publicado (`docs/EDGE_CAPTURE_CONTRACT.md`) y arquitectura decidida (`docs/AWS_EDGE_ARCHITECTURE.md`) |
 
 ## Evidencia ya disponible
@@ -45,6 +45,8 @@ Si alguna compuerta queda sin demostración, el prompt limita la calificación d
 | Contrato normativo del evento | `contracts/edge-capture-event.schema.json` | Forma y restricciones de la metadata enviada por el edge |
 | Fixture compartido | `contracts/examples/edge-capture-event.json` | Entrada válida para edge, backend y portal |
 | Contrato HTTP e idempotencia | `docs/EDGE_CAPTURE_CONTRACT.md` | Multipart, límites, respuestas, hash y reintentos |
+| Verificador de ingesta contra un host desplegado | `scripts/verify-p4-2-1-aws.mjs` | Reproduce `201`/`200`/`409` contra un endpoint real y descarta el token del resumen |
+| Smoke de AWS | `docs/p4-2-1-aws-smoke.json` | `capture_id`, `image_sha256`, `image_key` y status codes de la ejecución contra CloudFront (`passed: true`); sin secretos |
 | Línea base y reparto | `docs/PLAN_PROYECTO_4.md` | Modelo previo, responsables, prioridades, fechas y compuertas |
 
 ## Control de cierre
