@@ -49,18 +49,20 @@ a recursos privados como RDS:
 2. El backend (servicio App Runner) valida la metadata contra el schema del
    contrato y valida la imagen (tipo, tamaño, hash).
 3. Verifica idempotencia por `capture_id` en `edge_captures`.
-4. Sube la imagen a S3 con la clave `captures/YYYY/MM/DD/capture_id/original.ext`.
+4. Sube la imagen a S3 con una clave determinista que contiene el
+   `capture_id` y el SHA-256 validado.
 5. Persiste/actualiza la fila en `edge_captures` y responde `201`/`200`/`409`
    según el contrato.
 
 ## 4. Convención de claves S3
 
 ```
-captures/YYYY/MM/DD/capture_id/original.ext
+edge-captures/<capture_id>/<image_sha256>.<ext>
 ```
 
-`YYYY/MM/DD` deriva de `captured_at` (UTC); `capture_id` es el UUID del
-evento; `ext` ∈ `jpg`/`png` según el `Content-Type` (`image/jpeg`/`image/png`).
+`capture_id` es el UUID del evento, `image_sha256` es el hash comprobado sobre
+los bytes recibidos y `ext` ∈ `jpg`/`png` según el `Content-Type`
+(`image/jpeg`/`image/png`). Un reintento idéntico apunta así al mismo objeto.
 
 ## 5. Tabla mínima `edge_captures`
 
@@ -68,46 +70,56 @@ evento; `ext` ∈ `jpg`/`png` según el `Content-Type` (`image/jpeg`/`image/png`
 | --- | --- | --- |
 | `capture_id` | CHAR(36) PK | Clave de idempotencia. |
 | `device_id` | VARCHAR(128) | Del contrato. |
-| `captured_at` | DATETIME(6) | Convertido a UTC. |
-| `received_at` | DATETIME(6) | Asignado por el servidor. |
+| `captured_at` | VARCHAR(40) | RFC 3339 conservado literalmente para no perder zona ni milisegundos. |
+| `received_at` | TIMESTAMP | Asignado por el servidor. |
 | `predicted_class` | ENUM('car','person') | Clases congeladas. |
-| `confidence` | DECIMAL(5,4) | `[0,1]`. |
+| `confidence` | DOUBLE | `[0,1]`. |
 | `model_version` | VARCHAR(256) | Del contrato. |
-| `image_sha256` | CHAR(64) | Hex minúsculas. |
-| `image_bucket` | VARCHAR(63) | Bucket de capturas. |
-| `image_key` | VARCHAR(1024) | Clave S3 persistida. |
-| `crop_json` | JSON NULL | Opcional. |
-| `status` | ENUM('pending','ready','failed') | Solo `ready` aparece en consultas del portal. |
+| `image_sha256` | VARCHAR(64) | Hex minúsculas. |
+| `image_key` | VARCHAR(512) | Clave S3 persistida; el bucket se configura en el servicio. |
+| `crop` | VARCHAR(512) NULL | JSON serializado opcional. |
+| `mime_type` | VARCHAR(100) | `image/jpeg` o `image/png`. |
+| `size_bytes` | BIGINT UNSIGNED | Tamaño de los bytes validados. |
 
 ## 6. Idempotencia y rollback
 
-- **Idempotencia:** anclada en `capture_id`. El backend reserva primero una
-  fila `pending` mediante la PK; si ya existe, compara hash y metadata antes
-  de escribir en S3. Primer envío → `201`; reintento
-  idéntico (mismo `image_sha256` y metadatos) → `200` sin duplicar fila ni
-  foto lógica; mismo `capture_id` con contenido distinto → `409`.
-- **Escritura:** con la reserva `pending`, sube a la clave determinista y
-  cambia la fila a `ready`. Un reintento de una fila `pending` puede comprobar
-  el objeto y completar la operación en vez de duplicarla.
-- **Rollback:** ante un fallo irrecuperable, marca `failed` y elimina solo el
-  objeto de ese ID. Las consultas nunca muestran filas que no estén `ready`.
+- **Idempotencia:** anclada en la PK `capture_id`. Si la fila ya existe, el
+  backend compara hash y todos los metadatos antes de escribir. Primer envío
+  → `201`; reintento idéntico → `200` sin duplicar; mismo ID con contenido
+  distinto → `409`.
+- **Escritura:** para un ID nuevo, sube primero a la clave determinista y luego
+  inserta la fila. Si dos solicitudes compiten, la PK decide cuál gana y la
+  segunda devuelve `200` o `409` según el contenido persistido.
+- **Rollback:** si el insert falla y ninguna fila concurrente adoptó la misma
+  clave, elimina el objeto recién subido. Nunca elimina el objeto de una
+  solicitud concurrente válida.
 
 ## 7. Configuración sin secretos
 
 - La Raspberry **no** lleva credenciales AWS: configura `EDGE_API_BASE_URL`,
   `EDGE_DEVICE_ID`, la ruta del modelo y un `EDGE_INGEST_TOKEN` entregado fuera
   de Git. Envía ese token como `Authorization: Bearer ...`.
-- El backend obtiene permisos AWS por su **instance role** de App Runner.
-- `AWS_REGION`, `EDGE_CAPTURES_BUCKET`, `EDGE_CAPTURE_MAX_BYTES` y la referencia
-  al secreto de base de datos/token se configuran en el servicio; los valores
-  secretos permanecen en Secrets Manager y nunca en Git ni en la imagen.
+- El backend usa un **único cliente S3** (`@aws-sdk/client-s3`). En AWS (App
+  Runner) se configura **sin** `OBJECT_STORE_ENDPOINT_URL` ni credenciales
+  estáticas: el SDK resuelve región y credenciales por su **cadena por defecto**,
+  es decir el **instance role** de App Runner (más variables de entorno o
+  `~/.aws` si existieran). Nunca se incrustan claves en el código ni en la imagen.
+- **En local** el mismo cliente apunta a **MinIO** mediante
+  `OBJECT_STORE_ENDPOINT_URL` + `OBJECT_STORE_FORCE_PATH_STYLE=true` y las
+  credenciales `OBJECT_STORE_ACCESS_KEY` / `OBJECT_STORE_SECRET_KEY` (ambas
+  juntas o ninguna; un par incompleto hace fallar el arranque). La creación del
+  bucket solo ocurre en local: en AWS el backend únicamente comprueba que el
+  bucket exista, porque el instance role no incluye `s3:CreateBucket`.
+- `OBJECT_STORE_REGION`, `OBJECT_STORE_BUCKET`, `EDGE_CAPTURE_MAX_BYTES` y la
+  referencia al secreto de base de datos/token se configuran en el servicio; los
+  valores secretos permanecen en Secrets Manager y nunca en Git ni en la imagen.
 - `.env.example` solo debe contener nombres y valores de ejemplo no válidos.
 
 ## 8. IAM mínimo
 
 - **Instance role de App Runner:** `s3:PutObject`, `s3:GetObject` y
   `s3:DeleteObject` solo sobre
-  `arn:aws:s3:::edge-captures-dev-685538571046/captures/*`, más
+  `arn:aws:s3:::edge-captures-dev-685538571046/edge-captures/*`, más
   `secretsmanager:GetSecretValue` únicamente sobre los secretos requeridos.
 - **Access role de App Runner:** lectura de la imagen del repositorio ECR
   concreto; no administra repositorios ni otros servicios.
@@ -149,7 +161,8 @@ evento; `ext` ∈ `jpg`/`png` según el `Content-Type` (`image/jpeg`/`image/png`
 1. Primer `POST` válido → `201` y fila + objeto S3 creados.
 2. Reintento idéntico → `200`, sin duplicar fila ni objeto.
 3. Mismo `capture_id` con bytes distintos → `409`.
-4. Clave S3 conforme a `captures/YYYY/MM/DD/capture_id/original.ext`.
+4. Clave S3 conforme a
+   `edge-captures/<capture_id>/<image_sha256>.<ext>`.
 5. El bucket de capturas no es el de releases ni el de DVC.
 6. Sin credenciales AWS presentes en la Raspberry (revisión de entorno).
 7. La consulta `GET`/read-only recupera registro e imagen coincidentes.

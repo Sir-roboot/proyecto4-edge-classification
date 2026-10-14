@@ -11,20 +11,35 @@ const envSchema = z.object({
 
   DATABASE_URL: z.string().min(1),
 
-  MINIO_ENDPOINT: z.string().min(1),
+  // ── Object storage (S3-compatible)
+  //
+  // El backend usa un único cliente S3 (@aws-sdk/client-s3) para todo el
+  // almacenamiento de objetos:
+  //  - Local: MinIO, con endpoint explícito, path-style y credenciales.
+  //  - AWS (App Runner): S3 real, sin endpoint ni credenciales estáticas —
+  //    el SDK resuelve región y credenciales desde la cadena por defecto
+  //    (instance role de App Runner / variables del entorno / ~/.aws).
+  //
+  // Nunca se aceptan secretos dentro del código: solo llegan por entorno.
+  OBJECT_STORE_BUCKET: z.string().min(3),
 
-  MINIO_PORT: z.coerce.number().int().positive().default(9000),
+  // Región de firma del cliente. Obligatoria incluso contra MinIO (el SDK
+  // exige una región para firmar), aunque el endpoint apunte al MinIO local.
+  OBJECT_STORE_REGION: z.string().min(1).default('us-east-1'),
 
-  MINIO_USE_SSL: z
+  // Solo para MinIO local u otro S3-compatible. Ausente → S3 real de AWS.
+  OBJECT_STORE_ENDPOINT_URL: z.string().url().optional(),
+
+  // Solo tiene efecto con endpoint (MinIO): fuerza URLs de estilo
+  // `http://host/bucket/key` en vez del estilo virtual-host. En AWS se omite.
+  OBJECT_STORE_FORCE_PATH_STYLE: z
     .enum(['true', 'false'])
     .default('false')
     .transform((value) => value === 'true'),
 
-  MINIO_ACCESS_KEY: z.string().min(1),
+  OBJECT_STORE_ACCESS_KEY: z.string().min(1).optional(),
 
-  MINIO_SECRET_KEY: z.string().min(1),
-
-  MINIO_BUCKET: z.string().min(3),
+  OBJECT_STORE_SECRET_KEY: z.string().min(1).optional(),
 
   MAX_UPLOAD_SIZE_BYTES: z.coerce
     .number()
@@ -74,7 +89,24 @@ const envSchema = z.object({
 });
 
 /**
+ * Las credenciales del object store son opcionales (en AWS se usa la cadena
+ * por defecto del SDK), pero **nunca** se acepta una sola de las dos: o se
+ * configuran ambas (MinIO local) o ninguna (S3 con instance role). Un par
+ * incompleto es siempre un error de configuración, no un fallback silencioso.
+ */
+const envSchemaWithObjectStoreRules = envSchema.refine(
+  (values) =>
+    (values.OBJECT_STORE_ACCESS_KEY === undefined) ===
+    (values.OBJECT_STORE_SECRET_KEY === undefined),
+  {
+    message:
+      'OBJECT_STORE_ACCESS_KEY y OBJECT_STORE_SECRET_KEY deben configurarse juntas o ninguna (en AWS usa la cadena de credenciales por defecto).',
+    path: ['OBJECT_STORE_ACCESS_KEY'],
+  },
+);
+
+/**
  * Variables ya validadas y tipadas.
  * Si alguna configuración requerida falta, la aplicación falla al iniciar.
  */
-export const env = envSchema.parse(process.env);
+export const env = envSchemaWithObjectStoreRules.parse(process.env);

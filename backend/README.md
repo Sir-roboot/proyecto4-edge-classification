@@ -2,9 +2,10 @@
 
 Monolito para un portal web de anotación de imágenes.
 
-En esta etapa el backend permite almacenar imágenes en MinIO, guardar sus
-metadatos en MariaDB y preparar la información necesaria para futuras
-anotaciones y exportación al formato COCO.
+En esta etapa el backend permite almacenar imágenes en un almacén de objetos
+S3-compatible (MinIO en local, S3 real en AWS), guardar sus metadatos en
+MariaDB y preparar la información necesaria para futuras anotaciones y
+exportación al formato COCO.
 
 > **Estado actual: Fase 2 — Backend / Data**
 
@@ -14,7 +15,7 @@ anotaciones y exportación al formato COCO.
 - Node.js + Express
 - Drizzle ORM
 - MariaDB
-- MinIO
+- Object storage S3-compatible (`@aws-sdk/client-s3`; MinIO en local, S3 en AWS)
 - Zod 4
 - Multer
 - Sharp
@@ -28,14 +29,14 @@ El proyecto mantiene separación estricta entre tres capas:
 ```text
 UI → Logic → Data
               ├── MariaDB
-              └── MinIO
+              └── Object storage (MinIO local / S3 en AWS)
 ```
 
 - `src/ui`: endpoints HTTP con Express.
 - `src/logic`: reglas de negocio y validaciones.
-- `src/data`: acceso a MariaDB y MinIO.
+- `src/data`: acceso a MariaDB y al almacén de objetos.
 
-La capa UI nunca accede directamente a MariaDB ni a MinIO.
+La capa UI nunca accede directamente a MariaDB ni al almacén de objetos.
 
 ## Estructura principal
 
@@ -59,8 +60,9 @@ src/
     ├── repositories/
     │   └── image.repository.ts
     ├── storage/
-    │   ├── minio.client.ts
-    │   └── minio.storage.ts
+    │   ├── object-store.config.ts
+    │   ├── object-store.client.ts
+    │   └── object-store.storage.ts
     ├── seed.ts
     └── index.ts
 
@@ -106,17 +108,21 @@ DB_USER=root
 DB_PASSWORD=password
 DB_NAME=image_repo
 
-MINIO_ENDPOINT=localhost
-MINIO_PORT=9000
-MINIO_USE_SSL=false
-MINIO_ACCESS_KEY=minioadmin
-MINIO_SECRET_KEY=minioadmin
-MINIO_BUCKET=image-annotations
+OBJECT_STORE_BUCKET=image-annotations
+OBJECT_STORE_REGION=us-east-1
+OBJECT_STORE_ENDPOINT_URL=http://localhost:9000
+OBJECT_STORE_FORCE_PATH_STYLE=true
+OBJECT_STORE_ACCESS_KEY=minioadmin
+OBJECT_STORE_SECRET_KEY=minioadmin
 
 MAX_UPLOAD_SIZE_BYTES=5242880
 ```
 
-Los valores reales deben almacenarse únicamente en `.env`.
+Los valores reales deben almacenarse únicamente en `.env`. El backend usa un
+único cliente S3 (`@aws-sdk/client-s3`): en local apunta a MinIO con endpoint,
+path-style y credenciales explícitas; en AWS se omiten endpoint y credenciales
+y el SDK resuelve la región y las credenciales por su cadena por defecto
+(instance role de App Runner). Las dos credenciales deben ir juntas o ninguna.
 
 Para producción existe `.env.production.example` y el servidor está
 configurado para utilizar el puerto `3100`.
@@ -133,7 +139,7 @@ docker run --name proyecto1-mariadb \
   -d mariadb:11
 ```
 
-## Levantar MinIO
+## Levantar el almacén de objetos en local (MinIO)
 
 ```bash
 docker run --name proyecto1-minio \
@@ -151,10 +157,10 @@ API:      http://localhost:9000
 Consola:  http://localhost:9001
 ```
 
-El backend comprueba automáticamente que el bucket configurado exista y lo
-crea si es necesario.
-
-No es necesario crear el bucket manualmente.
+Con `OBJECT_STORE_ENDPOINT_URL` presente, el backend comprueba que el bucket
+exista y lo crea si falta, así que no hace falta crearlo a mano. En AWS (sin
+endpoint) solo lo comprueba: el bucket lo provisiona IaC y el instance role del
+backend no incluye `s3:CreateBucket`.
 
 ## Migraciones
 
@@ -192,7 +198,12 @@ npm run db:seed
 npm run db:seed
 ```
 
-sin duplicar registros ni objetos en MinIO.
+sin duplicar registros ni objetos en el almacén de objetos.
+
+El contenedor ejecuta este seeder al arrancar solo cuando
+`RUN_DB_SEED=true` (valor del `docker-compose.yml` local). En App Runner se
+mantiene `RUN_DB_SEED=false` para no escribir datos de ejemplo en el bucket de
+capturas.
 
 ## Ejecutar en desarrollo
 
@@ -286,14 +297,14 @@ Logic
     └── Sharp
     ↓
 Data
-    ├── MinIO   → archivo
-    └── MariaDB → metadatos
+    ├── Object storage → archivo
+    └── MariaDB        → metadatos
 ```
 
 Las dimensiones reales de la imagen son obtenidas con Sharp.
 
-Si el archivo se guarda en MinIO pero falla la escritura en MariaDB, el
-objeto de MinIO se elimina para evitar archivos huérfanos.
+Si el archivo se guarda en el almacén de objetos pero falla la escritura en
+MariaDB, el objeto se elimina para evitar archivos huérfanos.
 
 ## Base de datos
 
@@ -302,7 +313,7 @@ objeto de MinIO se elimina para evitar archivos huérfanos.
 Guarda los metadatos de cada imagen.
 
 El archivo no se almacena en MariaDB. `storage_key` referencia el objeto
-correspondiente dentro de MinIO.
+correspondiente dentro del almacén de objetos (MinIO local / S3 en AWS).
 
 ### categories
 
@@ -373,7 +384,7 @@ Antes de integrar cambios todos estos comandos deben terminar correctamente.
 
 ## Flujo completo desde cero
 
-Con MariaDB y MinIO levantados:
+Con MariaDB y el almacén de objetos (MinIO local) levantados:
 
 ```bash
 npm ci
@@ -398,12 +409,12 @@ Implementado:
 ```text
 Drizzle + MariaDB
 Migraciones versionadas
-MinIO
-Creación automática del bucket
+Object storage S3-compatible (MinIO local / S3 en AWS)
+Verificación y creación del bucket local
 Upload de imágenes
 Validación con Zod
 Validación de imágenes con Sharp
-Persistencia de archivos en MinIO
+Persistencia de archivos en el almacén de objetos
 Persistencia de metadatos en MariaDB
 Seeder idempotente
 Tests con Vitest
