@@ -8,6 +8,23 @@ El alcance, reparto inicial y criterios de cierre están en
 [docs/PLAN_PROYECTO_4.md](docs/PLAN_PROYECTO_4.md). La documentación siguiente conserva la
 línea base del Proyecto 3 para mantener su trazabilidad.
 
+## Documentación obligatoria del Proyecto 4
+
+Orden de lectura y dueños:
+
+1. [README.md](README.md) — para todos.
+2. [docs/PLAN_PROYECTO_4.md](docs/PLAN_PROYECTO_4.md) — para todos.
+3. [docs/EVIDENCE_MATRIX.md](docs/EVIDENCE_MATRIX.md) — para todos.
+4. [docs/EDGE_CAPTURE_CONTRACT.md](docs/EDGE_CAPTURE_CONTRACT.md) — para Andrés, Ignacio y Santiago.
+5. [docs/AWS_EDGE_ARCHITECTURE.md](docs/AWS_EDGE_ARCHITECTURE.md) — para Santiago e Ignacio.
+6. [contracts/edge-capture-event.schema.json](contracts/edge-capture-event.schema.json) y [contracts/examples/edge-capture-event.json](contracts/examples/edge-capture-event.json) — para quienes implementen edge, backend o portal.
+
+Cada integrante debe revisar su issue —[#5 Ignacio](https://github.com/Sir-roboot/proyecto4-edge-classification/issues/5),
+[#6 Andrés](https://github.com/Sir-roboot/proyecto4-edge-classification/issues/6),
+[#7 Luis Víctor](https://github.com/Sir-roboot/proyecto4-edge-classification/issues/7) o
+[#8 Santiago](https://github.com/Sir-roboot/proyecto4-edge-classification/issues/8)— y trabajar
+desde `main` actualizado en una rama propia.
+
 ---
 
 ## Línea base heredada: Proyecto 3
