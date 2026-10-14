@@ -99,6 +99,11 @@ los bytes recibidos y `ext` ∈ `jpg`/`png` según el `Content-Type`
 - La Raspberry **no** lleva credenciales AWS: configura `EDGE_API_BASE_URL`,
   `EDGE_DEVICE_ID`, la ruta del modelo y un `EDGE_INGEST_TOKEN` entregado fuera
   de Git. Envía ese token como `Authorization: Bearer ...`.
+- **Ingesta autenticada (P4-2.1):** el backend exige el token obligatorio
+  `EDGE_INGEST_TOKEN` (mínimo 32 caracteres) en cada `POST` de capturas. La
+  comparación es **en tiempo constante** y corre **antes** de Multer: sin token
+  válido responde `401` y no persiste nada. El token no se registra ni se
+  devuelve en ninguna respuesta. En App Runner llega desde Secrets Manager.
 - El backend usa un **único cliente S3** (`@aws-sdk/client-s3`). En AWS (App
   Runner) se configura **sin** `OBJECT_STORE_ENDPOINT_URL` ni credenciales
   estáticas: el SDK resuelve región y credenciales por su **cadena por defecto**,
@@ -114,6 +119,38 @@ los bytes recibidos y `ext` ∈ `jpg`/`png` según el `Content-Type`
   referencia al secreto de base de datos/token se configuran en el servicio; los
   valores secretos permanecen en Secrets Manager y nunca en Git ni en la imagen.
 - `.env.example` solo debe contener nombres y valores de ejemplo no válidos.
+
+## 7.1 Variables de runtime del contenedor consolidado (P4-2.1)
+
+La imagen de App Runner (`Dockerfile.apprunner`, un solo contenedor con nginx al
+frente en `:8080` y el backend interno en `:3100`) recibe estas variables:
+
+| Variable | Origen | Uso |
+| --- | --- | --- |
+| `EDGE_INGEST_TOKEN` | Secrets Manager | Token obligatorio (>= 32 chars) de la ingesta edge. |
+| `DATABASE_CREDENTIALS_JSON` | Secrets Manager | JSON `{username,password,host,port}` del secreto gestionado de RDS. |
+| `DB_NAME` | Variable del servicio | Base sobre la que se construye `DATABASE_URL`. |
+| `DATABASE_URL` | Derivada / opcional | Si no viene, el entrypoint la construye desde el JSON; si viene, se respeta. |
+| `DB_HOST` / `DB_PORT` | Derivadas / opcionales | Para el `wait-for`; se derivan de la URL cuando faltan. |
+| `RUN_DB_SEED` | Variable del servicio | `true` solo si se quiere sembrar datos (por defecto `false`). |
+| `OBJECT_STORE_BUCKET` / `OBJECT_STORE_REGION` | Variable del servicio | S3 real; sin endpoint ni credenciales estáticas (instance role). |
+
+El entrypoint (`docker/apprunner/entrypoint.sh`) **nunca imprime** la URL de
+conexión ni el JSON del secreto: solo mensajes de progreso. Las migraciones
+corren siempre; el seed solo con `RUN_DB_SEED=true`.
+
+### 7.1.1 Ruta interna `/edge-captures`
+
+nginx recibe `/api/…` y reenvía a `http://127.0.0.1:3100/` **quitando el
+prefijo** (mismo criterio que el nginx local `frontend/docker/nginx.conf`). Por
+eso el backend monta el alias interno `POST /edge-captures` **además** de la
+ruta pública `POST /api/edge-captures`: ambas comparten la misma cadena
+auth → multer → handler. Un cliente directo sigue usando `/api/edge-captures`.
+
+### 7.1.2 Health externo
+
+`GET /api/health` atraviesa nginx y llega al backend como `GET /health`. Es el
+health check del servicio (también el `HEALTHCHECK` del contenedor).
 
 ## 8. IAM mínimo
 
@@ -131,6 +168,9 @@ los bytes recibidos y `ext` ∈ `jpg`/`png` según el `Content-Type`
 
 - `POST /api/edge-captures`: **ya congelado** en
   `docs/EDGE_CAPTURE_CONTRACT.md`. Responsable: Santiago.
+- `POST /edge-captures`: **alias interno** (P4-2.1), no forma parte del contrato
+  público. Existe para que el nginx del contenedor consolidado quite `/api/`
+  como lo hace el local; comparte auth, multer y handler con la ruta pública.
 - `GET` (listado/detalle de capturas para el portal): **a cargo de
   Ignacio**. Aún no congelado.
 
@@ -144,9 +184,10 @@ los bytes recibidos y `ext` ∈ `jpg`/`png` según el `Content-Type`
 
 ## 11. Riesgos
 
-- **Imagen consolidada:** hoy frontend y backend tienen Dockerfiles separados;
-  P4-2.1 debe producir una imagen de despliegue que sirva el portal y la API en
-  un solo puerto compatible con App Runner.
+- **Imagen consolidada:** resuelto en P4-2.1 con `Dockerfile.apprunner` (nginx
+  al frente en `:8080`, backend interno en `:3100` y proxy `/api/` quitando el
+  prefijo). Lo pendiente para el ticket de Terraform es publicar esa imagen a
+  ECR y apuntar el servicio App Runner a ella.
 - **Acceso privado:** el VPC Connector debe usar subredes y security group que
   alcancen RDS y el endpoint S3, sin abrir RDS a Internet.
 - **Bucket y semántica:** no mezclar capturas con releases/DVC (distinta
@@ -168,6 +209,9 @@ los bytes recibidos y `ext` ∈ `jpg`/`png` según el `Content-Type`
 7. La consulta `GET`/read-only recupera registro e imagen coincidentes.
 8. La URL de App Runner responde por HTTPS y un token de ingesta inválido se
    rechaza sin persistir datos.
+9. La ingesta exige `Authorization: Bearer <EDGE_INGEST_TOKEN>`: token ausente,
+   con otro esquema o incorrecto responde `401` (antes de leer el multipart) y
+   no deja fila ni objeto. El token nunca aparece en la respuesta ni en logs.
 
 ## 13. Alcance
 

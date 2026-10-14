@@ -8,6 +8,19 @@
  * No debe contener código específico de UI (Express, HTTP, etc.).
  */
 
+// P4-2.1 — Autenticación de la ingesta edge.
+//
+// Vive en `config/` porque define cuáles son las credenciales del proceso, no
+// una regla de negocio del dominio; se reexporta desde Logic para que la capa
+// UI tenga un único punto de importación (regla de arquitectura: la UI no
+// importa `data`, y aquí tampoco se toca `data`).
+export type { EdgeIngestAuthResult } from '../config/edge-auth.js';
+export {
+  authenticateEdgeIngest,
+  EDGE_INGEST_TOKEN_MIN_LENGTH,
+  parseBearerToken,
+  tokensMatch,
+} from '../config/edge-auth.js';
 export type { AnnotationBoxInput } from './annotation.service.js';
 export {
   createAnnotationForImage,

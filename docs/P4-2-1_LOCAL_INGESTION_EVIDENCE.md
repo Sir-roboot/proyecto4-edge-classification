@@ -52,10 +52,30 @@ ningún proceso ni contenedor ejecutándose.
 ## Verificaciones automatizadas
 
 ~~~text
-backend: npm test          121/121 pruebas aprobadas en 15 archivos
+backend: npm test          162/162 pruebas aprobadas en 19 archivos
 backend: npm run typecheck aprobado
-backend: npm run lint      aprobado; solo informó diferencia de versión del schema de Biome
+backend: npm run lint      aprobado; 74 archivos sin cambios
 ~~~
+
+## Contenedor consolidado candidato para App Runner
+
+También se construyó y ejecutó `Dockerfile.apprunner` en Linux con nginx en
+`:8080`, el backend interno en `:3100`, migraciones mediante `drizzle-orm` y
+dependencias de producción solamente. La comprobación observó:
+
+| Comprobación | Resultado |
+| --- | --- |
+| SPA `/` | HTTP `200`, `text/html` |
+| Health `/api/health` | HTTP `200`, base conectada |
+| Ingesta sin token | HTTP `401`, sin persistencia |
+| Primera ingesta autenticada | HTTP `201` |
+| Reintento idéntico | HTTP `200` |
+| Mismo ID con metadata diferente | HTTP `409` |
+| Persistencia final | Una fila y un objeto con MIME, tamaño y SHA-256 coincidentes |
+| Limpieza | Fila, objeto, contenedor y archivos temporales retirados; volúmenes preservados |
+
+Esta prueba valida la imagen candidata y el recorrido local, pero no sustituye
+la evidencia de App Runner, RDS y S3 reales que exige M3.
 
 ## Pendiente para cerrar P4-2.1 y M3
 

@@ -8,10 +8,6 @@ import {
   deleteAnnotation,
   deleteImage,
   downloadSelectedModel,
-  EDGE_CAPTURE_MAX_IMAGE_BYTES,
-  EDGE_CAPTURE_MAX_METADATA_BYTES,
-  EdgeCaptureBadRequestError,
-  EdgeCaptureError,
   exportCocoDataset,
   getAnnotationsForImage,
   getCategories,
@@ -38,7 +34,6 @@ import {
   inferCrop,
   inferenceCropSchema,
   inferImage,
-  ingestEdgeCapture,
   initializeApplication,
   listExperiments,
   listModels,
@@ -51,13 +46,13 @@ import {
   selectModel,
   setImageStatus,
   TrainingRejectedError,
-  toEdgeCaptureResponse,
   trainingConfigSchema,
   updateAnnotation,
   updateQualityPolicy,
   uploadImage,
   ValidationError,
 } from '../logic/index.js';
+import { registerEdgeCaptureRoutes } from './edge-captures.route.js';
 
 /**
  * SPEC-VALID-001 — Valida un route param de id (`:imageId`, `:annotationId`)
@@ -91,22 +86,6 @@ function sendError(res: express.Response, error: unknown, fallback: string): voi
 }
 
 /**
- * P4-2.1 — Mapea los errores tipados de la ingesta edge a su código HTTP.
- *
- * El status vive en el propio error (`EdgeCaptureError.status`), así que el
- * mapeo no depende de comparar mensajes. Un error desconocido cae en 500.
- */
-function sendEdgeCaptureError(res: express.Response, error: unknown): void {
-  if (error instanceof EdgeCaptureError) {
-    res.status(error.status).json({ error: error.message });
-    return;
-  }
-
-  console.error('Error desconocido al ingerir la captura edge.', error);
-  res.status(500).json({ error: 'No se pudo procesar la captura edge.' });
-}
-
-/**
  * Punto de entrada de la capa UI.
  *
  * La UI nunca accede directamente a MariaDB ni a MinIO;
@@ -125,21 +104,6 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: env.MAX_UPLOAD_SIZE_BYTES,
-  },
-});
-
-/**
- * P4-2.1 — Multer dedicado a la ingesta de capturas edge.
- *
- * El contrato fija un límite de 10 MiB para la parte `image` (independiente
- * del límite del portal). Se usa una instancia separada para que ese tope no
- * dependa de `MAX_UPLOAD_SIZE_BYTES`. Un archivo más grande produce un
- * `MulterError` con `code === 'LIMIT_FILE_SIZE'`, que se mapea a 413.
- */
-const edgeCaptureUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: EDGE_CAPTURE_MAX_IMAGE_BYTES,
   },
 });
 
@@ -188,61 +152,19 @@ app.post('/images', upload.single('image'), async (req, res) => {
 /**
  * P4-2.1 — Ingesta de una captura edge (multipart con `metadata` + `image`).
  *
- * Contrato: `docs/EDGE_CAPTURE_CONTRACT.md`. Responde 201 en la primera
- * ingesta y 200 en un reintento idempotente. Los errores tipados de la capa
- * Logic ya traen su status (400/409/413/415/422); un `MulterError`
- * `LIMIT_FILE_SIZE` se traduce a 413 en el manejador de errores de Multer.
+ * Contrato: `docs/EDGE_CAPTURE_CONTRACT.md`. Ambas rutas comparten exactamente
+ * la misma cadena auth → multer → handler (`ui/edge-captures.route.js`):
+ *
+ *  - `/api/edge-captures` — ruta pública del contrato (clientes directos).
+ *  - `/edge-captures` — alias interno para que el nginx del contenedor
+ *    consolidado de App Runner pueda quitar el prefijo `/api/` como hace el
+ *    nginx local (`proxy_pass http://127.0.0.1:3100/`).
+ *
+ * El token (`EDGE_INGEST_TOKEN`, `Authorization: Bearer …`) se valida **antes**
+ * de Multer: sin token válido la respuesta es 401 y no se persiste nada.
  */
-app.post(
-  '/api/edge-captures',
-  edgeCaptureUpload.fields([{ name: 'image', maxCount: 1 }]),
-  async (req, res) => {
-    try {
-      const files = req.files as Record<string, Express.Multer.File[] | undefined> | undefined;
-      const imagePart = files?.image?.[0];
-      const bodyKeys = Object.keys(req.body as Record<string, unknown>);
-      const metadataPart = (req.body as Record<string, unknown>).metadata;
-
-      // Deben existir exactamente el campo de texto `metadata` y el archivo
-      // `image`; campos de texto adicionales también violan el contrato.
-      if (
-        typeof metadataPart !== 'string' ||
-        !imagePart ||
-        bodyKeys.length !== 1 ||
-        bodyKeys[0] !== 'metadata'
-      ) {
-        throw new EdgeCaptureBadRequestError(
-          'El multipart debe incluir las partes "metadata" e "image".',
-        );
-      }
-
-      // La metadata no debe exceder 4 KiB.
-      if (Buffer.byteLength(metadataPart, 'utf8') > EDGE_CAPTURE_MAX_METADATA_BYTES) {
-        throw new EdgeCaptureBadRequestError('La metadata excede el tamaño máximo de 4096 bytes.');
-      }
-
-      let metadata: unknown;
-      try {
-        metadata = JSON.parse(metadataPart);
-      } catch {
-        throw new EdgeCaptureBadRequestError('La parte "metadata" no es JSON válido.');
-      }
-
-      const result = await ingestEdgeCapture({
-        metadata,
-        image: {
-          mimeType: imagePart.mimetype,
-          buffer: imagePart.buffer,
-        },
-      });
-
-      // Respuesta del contrato: eco del evento + received_at + image_key.
-      res.status(result.created ? 201 : 200).json(toEdgeCaptureResponse(result.capture));
-    } catch (error) {
-      sendEdgeCaptureError(res, error);
-    }
-  },
-);
+registerEdgeCaptureRoutes(app, '/api/edge-captures');
+registerEdgeCaptureRoutes(app, '/edge-captures');
 
 function inferenceFileFromRequest(file: Express.Multer.File) {
   return {
