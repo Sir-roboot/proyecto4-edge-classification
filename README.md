@@ -27,6 +27,18 @@ desde `main` actualizado en una rama propia.
 
 ---
 
+## Equipo del Proyecto 4
+
+| Integrante | Usuario | Responsabilidad en el Proyecto 4 | Referencia |
+|---|---|---|---|
+| Santiago Ortiz | Sir-roboot | PM, AWS, backend de ingesta, integración y evidencias | issue #8 |
+| Andrés Quiroz Valdovinos | AndresQuiVal | Raspberry, cámara, runtime, inferencia local y cliente | issue #6 |
+| Luis Víctor Leal González | lluisvl | optimización, calidad y medición | issue #7 |
+| Ignacio Villaseñor Bernal | Lanachiza | API de consulta y Capturas Edge | issue #5 |
+
+La lista **Contributors** de GitHub incluye autores heredados por conservar el historial del
+Proyecto 3 y no define al equipo actual del Proyecto 4.
+
 ## Línea base heredada: Proyecto 3
 
 Clasificación multiclase de **un objeto por imagen**, entrenada sobre recortes de las cajas
@@ -42,7 +54,7 @@ la misma aplicación; sus secciones están más abajo.
 
 ---
 
-## Equipo
+## Equipo heredado del Proyecto 3
 
 | Integrante | Rol | Responsabilidad en el Proyecto 3 |
 |---|---|---|
