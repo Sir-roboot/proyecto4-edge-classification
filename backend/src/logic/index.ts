@@ -40,8 +40,43 @@ export type {
 } from './dashboard.builder.js';
 export { buildDashboardSummary, buildThumbnailUrl } from './dashboard.builder.js';
 export { getDashboardSummary } from './dashboard.service.js';
-// Errores tipados: la capa UI los mapea a códigos HTTP (SPEC-VALID-001).
-export { NotFoundError, ValidationError } from './errors.js';
+// P4-2.1 — Ingesta de capturas edge (contrato docs/EDGE_CAPTURE_CONTRACT.md).
+export type {
+  EdgeCaptureDependencies,
+  EdgeCaptureResponse,
+  EdgeCaptureUploadInput,
+  EdgeCaptureUploadResult,
+} from './edge-capture.service.js';
+export {
+  buildEdgeCaptureImageKey,
+  createEdgeCaptureService,
+  ingestEdgeCapture,
+  toEdgeCaptureResponse,
+} from './edge-capture.service.js';
+export {
+  computeImageSha256,
+  EDGE_CAPTURE_MAX_IMAGE_BYTES,
+  EDGE_CAPTURE_MAX_METADATA_BYTES,
+  type EdgeCaptureCrop,
+  type EdgeCaptureMetadata,
+  edgeCaptureCropSchema,
+  edgeCaptureMetadataSchema,
+  edgeCaptureMimeSchema,
+  validateEdgeCaptureImage,
+  validateEdgeCaptureMetadata,
+  validateImageSha256,
+} from './edge-capture.validation.js';
+// Errores tipados: la capa UI los mapea a códigos HTTP (SPEC-VALID-001 / P4-2.1).
+export {
+  EdgeCaptureBadRequestError,
+  EdgeCaptureConflictError,
+  EdgeCaptureError,
+  EdgeCapturePayloadTooLargeError,
+  EdgeCaptureUnprocessableEntityError,
+  EdgeCaptureUnsupportedMediaTypeError,
+  NotFoundError,
+  ValidationError,
+} from './errors.js';
 export {
   getEvaluation,
   getPredictions,

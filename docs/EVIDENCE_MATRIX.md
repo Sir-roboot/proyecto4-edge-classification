@@ -28,14 +28,14 @@ Si alguna compuerta queda sin demostración, el prompt limita la calificación d
 | 3.1 | Hardware, runtime, precisión, entrada y condiciones equivalentes documentadas | Luis Víctor + Andrés | PENDIENTE |
 | 3.2 | Tamaños, 10 calentamientos, 100 tiempos válidos y cálculo reproducible de p50/p95 | Luis Víctor + Andrés | PENDIENTE |
 | 3.3 | Comparación cuantitativa y decisión sobre intercambio recursos/calidad | Luis Víctor | PENDIENTE |
-| 4.1 | Evento completo enlazado a la fotografía mediante ID y SHA-256 | Santiago + Andrés | PENDIENTE |
-| 4.2 | Recurso AWS identificado y consulta de solo lectura que recupere registro e imagen | Santiago | PENDIENTE |
-| 4.3 | Fallo reversible, mensaje visible, reintento del mismo ID y comprobación de no duplicado | Santiago + Andrés | PENDIENTE |
+| 4.1 | Evento completo enlazado a la fotografía mediante ID y SHA-256 | Santiago + Andrés | EN PROGRESO — contrato y persistencia local verificados (`docs/P4-2-1_LOCAL_INGESTION_EVIDENCE.md`); falta contrastar el evento real de la Raspberry en AWS |
+| 4.2 | Recurso AWS identificado y consulta de solo lectura que recupere registro e imagen | Santiago | EN PROGRESO — lectura de fila/objeto comprobada en MariaDB/MinIO local; el recurso y la prueba de lectura en AWS siguen pendientes |
+| 4.3 | Fallo reversible, mensaje visible, reintento del mismo ID y comprobación de no duplicado | Santiago + Andrés | EN PROGRESO — `201`, reintento `200`, conflicto `409` y una sola fila verificados localmente; falta el fallo de envío reversible desde el edge |
 | 5.1 | Capturas Edge accesible desde el portal previo y desplegado en AWS | Ignacio | PENDIENTE |
 | 5.2 | Imagen y metadatos reales coincidentes, ordenados de reciente a antiguo | Ignacio | PENDIENTE |
 | 5.3 | Actualización, carga, vacío y error verificables | Ignacio | PENDIENTE |
 | 6.1 | README/ficha con instalación, arranque, recuperación de artefactos y recorrido | Santiago + todos | PENDIENTE |
-| 6.2 | Pasos repetibles para conversión, inferencia conocida y evento enviado/recuperado; cinco IDs contrastados | Santiago + todos | PENDIENTE |
+| 6.2 | Pasos repetibles para conversión, inferencia conocida y evento enviado/recuperado; cinco IDs contrastados | Santiago + todos | EN PROGRESO — recorrido local de un evento documentado; faltan conversión, inferencia física y cinco IDs contrastados en AWS/portal |
 | 6.3 | Configuración de ejemplo sin secretos, identidad del dispositivo, artefacto y destino AWS documentados | Santiago | EN PROGRESO — contrato publicado (`docs/EDGE_CAPTURE_CONTRACT.md`) y arquitectura decidida (`docs/AWS_EDGE_ARCHITECTURE.md`) |
 
 ## Evidencia ya disponible

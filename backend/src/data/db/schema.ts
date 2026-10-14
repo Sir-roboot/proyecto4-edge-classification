@@ -302,6 +302,83 @@ export const trainingJobs = mysqlTable(
 );
 
 /**
+ * edge_captures
+ *
+ * Eventos de captura enviados por los dispositivos edge. Cada fila = una
+ * fotografía y una predicción calculada en el dispositivo. El contrato está
+ * congelado en `docs/EDGE_CAPTURE_CONTRACT.md`; `capture_id` es la clave de
+ * idempotencia (única) y `image_key` la referencia del objeto en S3/MinIO.
+ */
+export const edgeCaptures = mysqlTable(
+  'edge_captures',
+  {
+    // Clave de idempotencia generada por el edge. Nunca cambia entre reintentos.
+    captureId: varchar('capture_id', {
+      length: 36,
+    })
+      .notNull()
+      .primaryKey(),
+
+    // Se conserva literalmente para no perder zona ni milisegundos. Esos
+    // datos forman parte de la comparación idempotente del evento.
+    capturedAt: varchar('captured_at', {
+      length: 40,
+    }).notNull(),
+
+    // Identificador estable y configurable del dispositivo.
+    deviceId: varchar('device_id', {
+      length: 128,
+    }).notNull(),
+
+    // Versión y hash de la variante optimizada en ejecución.
+    modelVersion: varchar('model_version', {
+      length: 256,
+    }).notNull(),
+
+    // Clase congelada del Proyecto 3: car | person.
+    predictedClass: mysqlEnum('predicted_class', ['car', 'person']).notNull(),
+
+    // Confianza calculada localmente, en [0, 1].
+    confidence: double('confidence').notNull(),
+
+    // SHA-256 (hex minúsculas) de los mismos bytes de la imagen enviada.
+    imageSha256: varchar('image_sha256', {
+      length: 64,
+    }).notNull(),
+
+    // Región de recorte aplicada (nullable: se omite cuando no hay recorte).
+    // Se guarda como JSON string serializado (x, y, width, height).
+    crop: varchar('crop', {
+      length: 512,
+    }),
+
+    // Referencia del objeto persistido en S3/MinIO.
+    imageKey: varchar('image_key', {
+      length: 512,
+    }).notNull(),
+
+    // Tipo MIME de la imagen: image/jpeg | image/png.
+    mimeType: varchar('mime_type', {
+      length: 100,
+    }).notNull(),
+
+    // Tamaño en bytes de la imagen recibida.
+    sizeBytes: bigint('size_bytes', {
+      mode: 'number',
+      unsigned: true,
+    }).notNull(),
+
+    // Fecha en que el backend persistió el evento (asignada por el servidor).
+    receivedAt: timestamp('received_at').notNull().defaultNow(),
+  },
+
+  (table) => [
+    index('edge_captures_received_at_idx').on(table.receivedAt),
+    index('edge_captures_device_id_idx').on(table.deviceId),
+  ],
+);
+
+/**
  * Tipos TypeScript generados automáticamente desde el esquema.
  */
 export type Image = typeof images.$inferSelect;
@@ -315,3 +392,6 @@ export type NewAnnotation = typeof annotations.$inferInsert;
 
 export type TrainingJob = typeof trainingJobs.$inferSelect;
 export type NewTrainingJob = typeof trainingJobs.$inferInsert;
+
+export type EdgeCapture = typeof edgeCaptures.$inferSelect;
+export type NewEdgeCapture = typeof edgeCaptures.$inferInsert;
