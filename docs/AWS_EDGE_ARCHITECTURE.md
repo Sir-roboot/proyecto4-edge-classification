@@ -20,24 +20,36 @@ inventario en `infra/README.md`.
 - Existen los buckets de **releases** y **DVC**. El de releases tiene
   **semántica distinta** (releases versionados + Object Lock/WORM); el de DVC
   es caché versionada. Ninguno se usa para capturas de edge.
+- La cuenta **no puede usar App Runner**: `aws apprunner list-services` en
+  `685538571046` devuelve `SubscriptionRequiredException`, porque AWS dejó de
+  aceptar clientes nuevos del servicio el **2026-03-31**.
 
 ## 2. Decisiones
 
 | # | Decisión |
 | --- | --- |
-| D1 | **Reutilizar** la VPC, sus subredes privadas, el endpoint de S3 y la RDS MariaDB dev existentes. |
+| D1 | **Reutilizar** la VPC, sus subredes públicas, el cluster ECS y la RDS MariaDB dev existentes. Las tareas usan IP pública solo para egreso sin NAT; su SG bloquea ingreso directo. |
 | D2 | **Crear después** un bucket privado nuevo `edge-captures-dev-685538571046` (versionado, sin Object Lock). |
-| D3 | **Desplegar** una imagen consolidada del portal/backend en **AWS App Runner**, desde un repositorio ECR nuevo y con VPC Connector hacia RDS. App Runner entrega una URL pública HTTPS sin crear ALB ni certificado propios. |
+| D3 | **Desplegar** una imagen consolidada del portal/backend en **ECS Fargate** (reutilizando el cluster `dataset-quality-dev`), detrás de un **ALB público** alcanzable solo vía **CloudFront** y protegido por el header secreto `X-Origin-Verify`, desde un repositorio ECR nuevo. |
 | D4 | **Persistir** la metadata en una tabla `edge_captures` (RDS MariaDB) y la **imagen en S3**. |
 | D5 | **No** usar DynamoDB. **No** usar IoT Core. **No** usar credenciales AWS en la Raspberry. |
 
-> La creación del bucket, ECR, App Runner/VPC Connector y la tabla ocurre en tickets
+> La creación del bucket, ECR, ECS/ALB/CloudFront y la tabla ocurre en tickets
 > posteriores; aquí solo se decide y se documenta el diseño.
 
-El cluster ECS queda fuera de esta entrega: como no tiene servicios, ECR ni
-balanceador, reutilizarlo obligaría a crear más piezas que App Runner. AWS documenta
-que App Runner ofrece un dominio de servicio y que un VPC Connector permite acceder
-a recursos privados como RDS:
+### Historial del pivote (App Runner → ECS Fargate + ALB + CloudFront)
+
+La decisión original (P4-0.4) era desplegar en **AWS App Runner** con un **VPC
+Connector** hacia RDS, porque entrega una URL HTTPS sin crear ALB ni certificado
+propios. Esa decisión **fue descartada** al comprobar la cuenta real
+`685538571046`: `aws apprunner list-services` devuelve
+`SubscriptionRequiredException`, porque AWS dejó de aceptar clientes nuevos del
+servicio el **2026-03-31**. La remediación (validada sin usar AWS, con
+`terraform validate -backend=false`) reutiliza el **cluster ECS**
+`dataset-quality-dev` que ya existe (`module.compute.cluster_id`) y añade ALB +
+CloudFront por delante.
+
+Referencias de la decisión original, conservadas como historial:
 
 - <https://docs.aws.amazon.com/apprunner/latest/dg/manage-create.html>
 - <https://docs.aws.amazon.com/apprunner/latest/dg/network-vpc.html>
@@ -46,8 +58,9 @@ a recursos privados como RDS:
 
 1. La Raspberry genera la captura y calcula `image_sha256`; envía un
    `POST /api/edge-captures` multipart contra el backend.
-2. El backend (servicio App Runner) valida la metadata contra el schema del
-   contrato y valida la imagen (tipo, tamaño, hash).
+2. El backend (contenedor en ECS Fargate, alcanzado vía CloudFront/ALB) valida
+   la metadata contra el schema del contrato y valida la imagen (tipo, tamaño,
+   hash).
 3. Verifica idempotencia por `capture_id` en `edge_captures`.
 4. Sube la imagen a S3 con una clave determinista que contiene el
    `capture_id` y el SHA-256 validado.
@@ -103,18 +116,19 @@ los bytes recibidos y `ext` ∈ `jpg`/`png` según el `Content-Type`
   `EDGE_INGEST_TOKEN` (mínimo 32 caracteres) en cada `POST` de capturas. La
   comparación es **en tiempo constante** y corre **antes** de Multer: sin token
   válido responde `401` y no persiste nada. El token no se registra ni se
-  devuelve en ninguna respuesta. En App Runner llega desde Secrets Manager.
-- El backend usa un **único cliente S3** (`@aws-sdk/client-s3`). En AWS (App
-  Runner) se configura **sin** `OBJECT_STORE_ENDPOINT_URL` ni credenciales
+  devuelve en ninguna respuesta. En ECS llega desde Secrets Manager (lo inyecta
+  la task definition).
+- El backend usa un **único cliente S3** (`@aws-sdk/client-s3`). En AWS (ECS
+  Fargate) se configura **sin** `OBJECT_STORE_ENDPOINT_URL` ni credenciales
   estáticas: el SDK resuelve región y credenciales por su **cadena por defecto**,
-  es decir el **instance role** de App Runner (más variables de entorno o
-  `~/.aws` si existieran). Nunca se incrustan claves en el código ni en la imagen.
+  es decir el **task role** de ECS (más variables de entorno o `~/.aws` si
+  existieran). Nunca se incrustan claves en el código ni en la imagen.
 - **En local** el mismo cliente apunta a **MinIO** mediante
   `OBJECT_STORE_ENDPOINT_URL` + `OBJECT_STORE_FORCE_PATH_STYLE=true` y las
   credenciales `OBJECT_STORE_ACCESS_KEY` / `OBJECT_STORE_SECRET_KEY` (ambas
   juntas o ninguna; un par incompleto hace fallar el arranque). La creación del
   bucket solo ocurre en local: en AWS el backend únicamente comprueba que el
-  bucket exista, porque el instance role no incluye `s3:CreateBucket`.
+  bucket exista, porque el task role no incluye `s3:CreateBucket`.
 - `OBJECT_STORE_REGION`, `OBJECT_STORE_BUCKET`, `EDGE_CAPTURE_MAX_BYTES` y la
   referencia al secreto de base de datos/token se configuran en el servicio; los
   valores secretos permanecen en Secrets Manager y nunca en Git ni en la imagen.
@@ -122,8 +136,9 @@ los bytes recibidos y `ext` ∈ `jpg`/`png` según el `Content-Type`
 
 ## 7.1 Variables de runtime del contenedor consolidado (P4-2.1)
 
-La imagen de App Runner (`Dockerfile.apprunner`, un solo contenedor con nginx al
-frente en `:8080` y el backend interno en `:3100`) recibe estas variables:
+La imagen de ECS (`Dockerfile.apprunner`, nombre conservado por compatibilidad
+aunque la imagen es portable a ECS; un solo contenedor con nginx al frente en
+`:8080` y el backend interno en `:3100`) recibe estas variables:
 
 | Variable | Origen | Uso |
 | --- | --- | --- |
@@ -133,7 +148,7 @@ frente en `:8080` y el backend interno en `:3100`) recibe estas variables:
 | `DATABASE_URL` | Derivada / opcional | Si no viene, el entrypoint la construye desde el JSON; si viene, se respeta. |
 | `DB_HOST` / `DB_PORT` | Derivadas / opcionales | Para el `wait-for`; se derivan de la URL cuando faltan. |
 | `RUN_DB_SEED` | Variable del servicio | `true` solo si se quiere sembrar datos (por defecto `false`). |
-| `OBJECT_STORE_BUCKET` / `OBJECT_STORE_REGION` | Variable del servicio | S3 real; sin endpoint ni credenciales estáticas (instance role). |
+| `OBJECT_STORE_BUCKET` / `OBJECT_STORE_REGION` | Variable del servicio | S3 real; sin endpoint ni credenciales estáticas (task role de ECS). |
 
 El entrypoint (`docker/apprunner/entrypoint.sh`) **nunca imprime** la URL de
 conexión ni el JSON del secreto: solo mensajes de progreso. Las migraciones
@@ -154,12 +169,13 @@ health check del servicio (también el `HEALTHCHECK` del contenedor).
 
 ## 8. IAM mínimo
 
-- **Instance role de App Runner:** `s3:PutObject`, `s3:GetObject` y
-  `s3:DeleteObject` solo sobre
-  `arn:aws:s3:::edge-captures-dev-685538571046/edge-captures/*`, más
-  `secretsmanager:GetSecretValue` únicamente sobre los secretos requeridos.
-- **Access role de App Runner:** lectura de la imagen del repositorio ECR
-  concreto; no administra repositorios ni otros servicios.
+- **Task role de ECS:** `s3:ListBucket` solo sobre el ARN del bucket de
+  capturas y `s3:GetObject`/`s3:PutObject`/`s3:DeleteObject` solo sobre
+  `arn:aws:s3:::edge-captures-dev-685538571046/edge-captures/*` (`DeleteObject`
+  lo exige el rollback de una escritura parcial).
+- **Execution role de ECS:** `AmazonECSTaskExecutionRolePolicy` (bajar la imagen
+  de ECR y escribir logs) más `secretsmanager:GetSecretValue` únicamente sobre
+  el secreto del token de ingesta y el secreto gestionado de RDS.
 - Sin `s3:*`, sin IAM administrativo y sin credenciales estáticas en el
   contenedor. La conexión a RDS usa el secreto gestionado; aquí no se publica
   ninguna cadena de conexión.
@@ -178,18 +194,21 @@ health check del servicio (también el `HEALTHCHECK` del contenedor).
 
 | Acción | Recurso |
 | --- | --- |
-| Reutilizar | VPC/subredes, endpoint S3 y RDS `dataset-quality-dev` |
-| Crear (después) | Bucket `edge-captures-dev-685538571046`, repositorio ECR, roles mínimos, VPC Connector, servicio App Runner y migración `edge_captures` |
-| No usar para P4 | Cluster ECS vacío y buckets de releases/DVC |
+| Reutilizar | VPC/subredes públicas, cluster ECS `dataset-quality-dev` y RDS `dataset-quality-dev` |
+| Crear (después) | Bucket `edge-captures-dev-685538571046`, repositorio ECR, roles ECS mínimos, ALB + CloudFront, servicio ECS Fargate y migración `edge_captures` |
+| No usar para P4 | Buckets de releases/DVC y el endpoint S3 de las subredes privadas (la tarea corre en subredes públicas sin NAT) |
 
 ## 11. Riesgos
 
 - **Imagen consolidada:** resuelto en P4-2.1 con `Dockerfile.apprunner` (nginx
   al frente en `:8080`, backend interno en `:3100` y proxy `/api/` quitando el
-  prefijo). Lo pendiente para el ticket de Terraform es publicar esa imagen a
-  ECR y apuntar el servicio App Runner a ella.
-- **Acceso privado:** el VPC Connector debe usar subredes y security group que
-  alcancen RDS y el endpoint S3, sin abrir RDS a Internet.
+  prefijo). El nombre se conserva por compatibilidad; la imagen es portable a
+  ECS. Lo pendiente para el ticket de Terraform es publicar esa imagen a ECR y
+  apuntar la task definition de ECS a ella.
+- **Exposición del ALB:** el ALB es público, pero su ingress se limita al
+  prefijo gestionado de CloudFront y exige el header `X-Origin-Verify`; un
+  acceso directo a su DNS responde `403`. La tarea usa IP pública solo para
+  arrancar sin NAT y su SG no admite ingress directo.
 - **Bucket y semántica:** no mezclar capturas con releases/DVC (distinta
   retención/Object Lock).
 - **Idempotencia distribuida:** colisiones de `capture_id` con contenido
@@ -207,8 +226,9 @@ health check del servicio (también el `HEALTHCHECK` del contenedor).
 5. El bucket de capturas no es el de releases ni el de DVC.
 6. Sin credenciales AWS presentes en la Raspberry (revisión de entorno).
 7. La consulta `GET`/read-only recupera registro e imagen coincidentes.
-8. La URL de App Runner responde por HTTPS y un token de ingesta inválido se
-   rechaza sin persistir datos.
+8. La URL de CloudFront responde por HTTPS y un token de ingesta inválido se
+   rechaza sin persistir datos. Un acceso directo al DNS del ALB sin el header
+   `X-Origin-Verify` responde `403`.
 9. La ingesta exige `Authorization: Bearer <EDGE_INGEST_TOKEN>`: token ausente,
    con otro esquema o incorrecto responde `401` (antes de leer el multipart) y
    no deja fila ni objeto. El token nunca aparece en la respuesta ni en logs.

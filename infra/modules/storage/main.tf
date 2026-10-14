@@ -11,6 +11,9 @@ resource "aws_s3_bucket" "this" {
   # is actually true for a given caller.
   object_lock_enabled = var.enable_object_lock
 
+  # Default false: only ephemeral buckets opt in so teardown stays clean.
+  force_destroy = var.force_destroy
+
   tags = var.tags
 }
 

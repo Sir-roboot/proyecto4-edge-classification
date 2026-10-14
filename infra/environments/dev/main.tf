@@ -187,3 +187,58 @@ resource "aws_iam_role_policy_attachment" "classifier_portal_release_publish" {
   role       = aws_iam_role.classifier_portal.name
   policy_arn = aws_iam_policy.release_publish.arn
 }
+
+# --- P4-2.1: ingesta edge (bucket de capturas + ECS Fargate/ALB/CloudFront) ---
+#
+# D2: bucket privado nuevo para las capturas de edge. Semántica distinta a
+# releases/DVC, así que NO reutiliza esos buckets: versionado (idempotencia y
+# recuperación) pero sin Object Lock (el backend borra en rollback de una
+# escritura parcial). Igual que los demás buckets, el entorno va en el nombre
+# porque dev/prod comparten una sola cuenta AWS.
+module "edge_captures" {
+  source = "../../modules/storage"
+
+  bucket_name        = "edge-captures-dev-${data.aws_caller_identity.current.account_id}"
+  enable_versioning  = true
+  enable_object_lock = false
+
+  # Bucket efímero de capturas en dev: fuerza el borrado en `terraform destroy`
+  # para no dejar objetos/versiones huérfanos durante el teardown.
+  force_destroy = true
+
+  tags = {
+    Environment = "dev"
+  }
+}
+
+# D3: servicio ECS Fargate + ALB + CloudFront, con ECR + token/secret + roles
+# mínimos + log group. Reutiliza el cluster ECS existente
+# (`module.compute.cluster_id`), la VPC/subredes públicas y la RDS dev; el
+# ingress al ALB se limita a CloudFront y la tarea no expone RDS a Internet.
+#
+# El servicio (ALB, task definition, ECS, CloudFront) solo se crea cuando
+# `deploy_edge_service = true`, en el paso 2 tras publicar la imagen (ver
+# infra/README.md). El paso 1 (default false) crea ECR, secretos, roles y log
+# group sin usar `-target`.
+module "edge_app" {
+  source = "../../modules/edge-app"
+
+  environment    = "dev"
+  aws_region     = var.aws_region
+  image_tag      = var.app_image_tag
+  deploy_service = var.deploy_edge_service
+
+  cluster_id        = module.compute.cluster_id
+  vpc_id            = module.network.vpc_id
+  public_subnet_ids = module.network.public_subnet_ids
+
+  ecr_force_delete = true
+
+  capture_bucket_name = module.edge_captures.bucket_id
+  capture_bucket_arn  = module.edge_captures.bucket_arn
+  rds_secret_arn      = module.data.master_user_secret_arn
+
+  tags = {
+    Environment = "dev"
+  }
+}
