@@ -42,6 +42,13 @@ describe('parseRdsCredentials', () => {
     expect(credentials.port).toBe(3306);
   });
 
+  it('acepta un secreto gestionado que solo trae username y password', () => {
+    expect(parseRdsCredentials({ username: 'app_user', password: 'not-a-real-password' })).toEqual({
+      username: 'app_user',
+      password: 'not-a-real-password',
+    });
+  });
+
   it('rechaza JSON inválido sin exponer el contenido', () => {
     expect(() => parseRdsCredentials('{no-es-json')).toThrow(DatabaseUrlConfigError);
   });
@@ -96,6 +103,35 @@ describe('buildDatabaseUrl', () => {
   it('no codifica el host (nombre DNS o IP)', () => {
     const url = buildDatabaseUrl(SECRET_JSON, 'image_repo');
     expect(url).toContain('@dataset-quality-dev.example.rds.amazonaws.com:3306/');
+  });
+
+  it('usa host/port de fallback cuando el secreto solo trae username/password', () => {
+    const url = buildDatabaseUrl(
+      JSON.stringify({ username: 'app_user', password: 'p@ss word' }),
+      'image_repo',
+      { host: 'db.internal', port: 3306 },
+    );
+
+    expect(url).toBe('mysql://app_user:p%40ss%20word@db.internal:3306/image_repo');
+  });
+
+  it('prefiere el endpoint explícito sobre un secreto enriquecido', () => {
+    const url = buildDatabaseUrl(SECRET_JSON, 'image_repo', { host: 'fallback-host', port: 9999 });
+
+    expect(url).toBe('mysql://app_user:not-a-real-password@fallback-host:9999/image_repo');
+  });
+
+  it('lanza sin host ni port y no expone la contraseña', () => {
+    try {
+      buildDatabaseUrl(
+        JSON.stringify({ username: 'app_user', password: 'super-secret-value' }),
+        'image_repo',
+      );
+      expect.unreachable('debía lanzar');
+    } catch (error) {
+      expect(error).toBeInstanceOf(DatabaseUrlConfigError);
+      expect((error as Error).message).not.toContain('super-secret-value');
+    }
   });
 
   it('exige un DB_NAME no vacío', () => {

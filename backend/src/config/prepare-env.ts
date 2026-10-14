@@ -1,7 +1,7 @@
 import { buildDatabaseUrl } from './database-url.js';
 
 /**
- * P4-2.1 — Preparación del entorno de arranque para App Runner.
+ * P4-2.1 — Preparación del entorno de arranque para ECS Fargate.
  *
  * Módulo **puro respecto a efectos**: `prepareEnvironment` no lee
  * `process.env` por su cuenta ni imprime nada; recibe el entorno como
@@ -10,11 +10,14 @@ import { buildDatabaseUrl } from './database-url.js';
  * el JSON del secreto ni la `DATABASE_URL` completos (ver requisito: no
  * imprimir secretos).
  *
- * Traduce el JSON del secreto gestionado de RDS (`DATABASE_CREDENTIALS_JSON`,
- * `{username,password,host,port}`) a `DATABASE_URL` —lo que espera
- * `config/env.ts`— usando el constructor puro `buildDatabaseUrl`, y deriva
- * `DB_HOST` / `DB_PORT` para el `wait-for` de la base. Cuando `DATABASE_URL` ya
- * viene definida, no la toca.
+ * Traduce el JSON del secreto gestionado de RDS (`DATABASE_CREDENTIALS_JSON`)
+ * a `DATABASE_URL` —lo que espera `config/env.ts`— usando el constructor puro
+ * `buildDatabaseUrl`. El secreto nativo de RDS solo trae `username`/`password`,
+ * así que `DB_HOST`/`DB_PORT` (variables no secretas inyectadas por Terraform)
+ * actúan como host/puerto de fallback; los secretos enriquecidos que sí traen
+ * `host`/`port` siguen funcionando. De ahí se derivan `DB_HOST`/`DB_PORT` para
+ * el `wait-for` de la base. Cuando `DATABASE_URL` ya viene definida, no la
+ * toca.
  */
 
 export interface PreparedEnvironment {
@@ -81,17 +84,20 @@ export function prepareEnvironment(env: NodeJS.ProcessEnv): PreparedEnvironment 
     throw new Error('DB_NAME es obligatorio para construir DATABASE_URL desde el secreto de RDS.');
   }
 
-  const databaseUrl = buildDatabaseUrl(credentialsJson, databaseName);
+  const databaseUrl = buildDatabaseUrl(credentialsJson, databaseName, {
+    host: env.DB_HOST,
+    port: env.DB_PORT,
+  });
   const { host, port } = parseDatabaseUrl(databaseUrl);
 
   return {
     env: {
       ...env,
       DATABASE_URL: databaseUrl,
-      DB_HOST: env.DB_HOST ?? host,
-      DB_PORT: env.DB_PORT ?? port,
+      DB_HOST: host,
+      DB_PORT: port,
     },
-    dbHost: env.DB_HOST ?? host,
-    dbPort: env.DB_PORT ?? port,
+    dbHost: host,
+    dbPort: port,
   };
 }
