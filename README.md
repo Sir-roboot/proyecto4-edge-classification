@@ -17,7 +17,8 @@ Orden de lectura y dueños:
 3. [docs/EVIDENCE_MATRIX.md](docs/EVIDENCE_MATRIX.md) — para todos.
 4. [docs/EDGE_CAPTURE_CONTRACT.md](docs/EDGE_CAPTURE_CONTRACT.md) — para Andrés, Ignacio y Santiago.
 5. [docs/AWS_EDGE_ARCHITECTURE.md](docs/AWS_EDGE_ARCHITECTURE.md) — para Santiago e Ignacio.
-6. [contracts/edge-capture-event.schema.json](contracts/edge-capture-event.schema.json) y [contracts/examples/edge-capture-event.json](contracts/examples/edge-capture-event.json) — para quienes implementen edge, backend o portal.
+6. [docs/P4-2-1_LOCAL_INGESTION_EVIDENCE.md](docs/P4-2-1_LOCAL_INGESTION_EVIDENCE.md) — estado verificable de la ingesta antes de AWS.
+7. [contracts/edge-capture-event.schema.json](contracts/edge-capture-event.schema.json) y [contracts/examples/edge-capture-event.json](contracts/examples/edge-capture-event.json) — para quienes implementen edge, backend o portal.
 
 Cada integrante debe revisar su issue —[#5 Ignacio](https://github.com/Sir-roboot/proyecto4-edge-classification/issues/5),
 [#6 Andrés](https://github.com/Sir-roboot/proyecto4-edge-classification/issues/6),
