@@ -36,7 +36,7 @@ Si alguna compuerta queda sin demostración, el prompt limita la calificación d
 | 5.3 | Actualización, carga, vacío y error verificables | Ignacio | PENDIENTE |
 | 6.1 | README/ficha con instalación, arranque, recuperación de artefactos y recorrido | Santiago + todos | PENDIENTE |
 | 6.2 | Pasos repetibles para conversión, inferencia conocida y evento enviado/recuperado; cinco IDs contrastados | Santiago + todos | PENDIENTE |
-| 6.3 | Configuración de ejemplo sin secretos, identidad del dispositivo, artefacto y destino AWS documentados | Santiago | EN PROGRESO — contrato publicado |
+| 6.3 | Configuración de ejemplo sin secretos, identidad del dispositivo, artefacto y destino AWS documentados | Santiago | EN PROGRESO — contrato publicado (`docs/EDGE_CAPTURE_CONTRACT.md`) y arquitectura decidida (`docs/AWS_EDGE_ARCHITECTURE.md`) |
 
 ## Evidencia ya disponible
 
