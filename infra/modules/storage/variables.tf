@@ -26,6 +26,17 @@ variable "object_lock_retention_days" {
   default     = 90
 }
 
+variable "force_destroy" {
+  description = <<-EOT
+    Si es true, `terraform destroy` borra el bucket aunque contenga objetos
+    (también versiones no actuales). Default false: solo los buckets efímeros
+    (p. ej. las capturas edge en dev) lo activan para permitir el teardown
+    limpio sin purgar objetos a mano.
+  EOT
+  type        = bool
+  default     = false
+}
+
 variable "tags" {
   description = "Extra tags merged into every resource in this module."
   type        = map(string)
