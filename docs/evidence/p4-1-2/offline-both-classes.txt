@@ -1,0 +1,6 @@
+=== CARRO con red bloqueada ===
+{"red": "bloqueada", "sockets": "deshabilitados"}
+{"imagen": "captura_20261015_140501_841680.jpg", "predicted_class": "car", "confidence": 0.8444, "clasifico_sin_red": true}
+=== PERSONA con red bloqueada ===
+{"red": "bloqueada", "sockets": "deshabilitados"}
+{"imagen": "captura_20261015_140523_595046.jpg", "predicted_class": "person", "confidence": 0.9065, "clasifico_sin_red": true}

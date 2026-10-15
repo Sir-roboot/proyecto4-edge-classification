@@ -1,0 +1,12 @@
+Entradas conocidas (rúbrica 2.2) — Raspberry Pi, modelo ONNX INT8
+Fecha: 2026-10-15 14:05 (hora CDMX)
+Captura real con webcam UGREEN; clase mostrada vs. predicción.
+
+# CARRO mostrado a la cámara -> docs/evidence/p4-1-2/conocida-car.jpg
+{"captured_at": "2026-10-15T14:05:03.174967-06:00", "image_sha256": "df7d44a26cad13a3522c0a5c54ec738d5da00d463ed05d693bb33cfb41edad8b", "predicted_class": "car", "confidence": 0.844394, "probabilities": {"car": 0.844394, "person": 0.155606}, "inference_ms": 43.43}
+
+# PERSONA mostrada a la cámara -> docs/evidence/p4-1-2/conocida-person.jpg
+{"captured_at": "2026-10-15T14:05:24.635622-06:00", "image_sha256": "3e634cc9efd56fbd874eae2816687d6a577fc71a4a810e0c3492bf5a94997dfa", "predicted_class": "person", "confidence": 0.90646, "probabilities": {"car": 0.09354, "person": 0.90646}, "inference_ms": 45.95}
+
+Resultado: ambas clases congeladas (car, person) clasificadas correctamente;
+confirma el orden de clases (car=0, person=1) y el acierto en entradas controladas.
