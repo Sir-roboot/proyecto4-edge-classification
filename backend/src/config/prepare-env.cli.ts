@@ -3,7 +3,7 @@ import 'dotenv/config';
 import { prepareEnvironment, quoteForPosixShell } from './prepare-env.js';
 
 /**
- * P4-2.1 — CLI del entrypoint de App Runner.
+ * P4-2.1 — CLI del entrypoint de ECS Fargate.
  *
  * Escribe en stdout, en formato `KEY='value'`, las variables que el shell del
  * entrypoint debe exportar (`DATABASE_URL`, `DB_HOST`, `DB_PORT`). El stdout se

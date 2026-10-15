@@ -368,11 +368,15 @@ resource "aws_ecs_task_definition" "this" {
       environment = [
         { name = "NODE_ENV", value = "production" },
         { name = "DB_NAME", value = var.db_name },
+        { name = "DB_HOST", value = var.rds_host },
+        { name = "DB_PORT", value = tostring(var.rds_port) },
         { name = "OBJECT_STORE_BUCKET", value = var.capture_bucket_name },
         { name = "OBJECT_STORE_REGION", value = var.aws_region },
         { name = "RUN_DB_SEED", value = "false" },
       ]
 
+      # El secreto nativo de RDS solo trae username/password; host y puerto
+      # llegan arriba como environment no secreto (DB_HOST/DB_PORT).
       secrets = [
         { name = "EDGE_INGEST_TOKEN", valueFrom = aws_secretsmanager_secret.ingest_token.arn },
         { name = "DATABASE_CREDENTIALS_JSON", valueFrom = var.rds_secret_arn },
