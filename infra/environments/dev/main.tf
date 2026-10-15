@@ -237,6 +237,8 @@ module "edge_app" {
   capture_bucket_name = module.edge_captures.bucket_id
   capture_bucket_arn  = module.edge_captures.bucket_arn
   rds_secret_arn      = module.data.master_user_secret_arn
+  rds_host            = module.data.db_instance_address
+  rds_port            = module.data.db_instance_port
 
   tags = {
     Environment = "dev"

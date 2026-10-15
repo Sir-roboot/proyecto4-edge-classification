@@ -79,8 +79,29 @@ variable "capture_bucket_arn" {
 }
 
 variable "rds_secret_arn" {
-  description = "ARN del secreto gestionado de RDS con las credenciales maestras (inyectado como DATABASE_CREDENTIALS_JSON)."
+  description = "ARN del secreto gestionado de RDS con las credenciales maestras (inyectado como DATABASE_CREDENTIALS_JSON). El secreto nativo de RDS solo contiene username/password."
   type        = string
+}
+
+variable "rds_host" {
+  description = "Hostname (address) de la instancia RDS, dato NO secreto. Se inyecta como DB_HOST; el secreto gestionado de RDS solo lleva username/password, así que el host viene de Terraform."
+  type        = string
+
+  validation {
+    condition     = length(trimspace(var.rds_host)) > 0
+    error_message = "rds_host no puede estar vacío."
+  }
+}
+
+variable "rds_port" {
+  description = "Puerto de la instancia RDS, dato NO secreto. Se inyecta como DB_PORT."
+  type        = number
+  default     = 3306
+
+  validation {
+    condition     = var.rds_port > 0 && var.rds_port <= 65535
+    error_message = "rds_port debe ser un puerto TCP válido (1-65535)."
+  }
 }
 
 variable "db_name" {

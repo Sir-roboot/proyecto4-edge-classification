@@ -33,6 +33,56 @@ describe('prepareEnvironment', () => {
     expect(env.DB_PORT).toBe('3306');
   });
 
+  it('construye DATABASE_URL con DB_HOST/DB_PORT no secretos cuando el secreto solo trae username/password', () => {
+    const { env, dbHost, dbPort } = prepareEnvironment({
+      DATABASE_CREDENTIALS_JSON: JSON.stringify({
+        username: 'app_user',
+        password: 'not-a-real-password',
+      }),
+      DB_NAME: 'image_repo',
+      DB_HOST: 'db.internal.example.com',
+      DB_PORT: '3306',
+    });
+
+    expect(env.DATABASE_URL).toBe(
+      'mysql://app_user:not-a-real-password@db.internal.example.com:3306/image_repo',
+    );
+    expect(dbHost).toBe('db.internal.example.com');
+    expect(dbPort).toBe('3306');
+    expect(env.DB_HOST).toBe('db.internal.example.com');
+    expect(env.DB_PORT).toBe('3306');
+  });
+
+  it('mantiene compatible un secreto enriquecido con host/port sin DB_HOST/DB_PORT', () => {
+    const { env, dbHost, dbPort } = prepareEnvironment({
+      DATABASE_CREDENTIALS_JSON: SECRET_JSON,
+      DB_NAME: 'image_repo',
+    });
+
+    expect(env.DATABASE_URL).toBe(
+      'mysql://app_user:not-a-real-password@db.internal.example.com:3306/image_repo',
+    );
+    expect(dbHost).toBe('db.internal.example.com');
+    expect(dbPort).toBe('3306');
+  });
+
+  it('mantiene DATABASE_URL y wait-for alineados con el endpoint explícito', () => {
+    const { env, dbHost, dbPort } = prepareEnvironment({
+      DATABASE_CREDENTIALS_JSON: SECRET_JSON,
+      DB_NAME: 'image_repo',
+      DB_HOST: 'fallback.internal.example.com',
+      DB_PORT: '9999',
+    });
+
+    expect(env.DATABASE_URL).toBe(
+      'mysql://app_user:not-a-real-password@fallback.internal.example.com:9999/image_repo',
+    );
+    expect(dbHost).toBe('fallback.internal.example.com');
+    expect(dbPort).toBe('9999');
+    expect(env.DB_HOST).toBe('fallback.internal.example.com');
+    expect(env.DB_PORT).toBe('9999');
+  });
+
   it('respeta DATABASE_URL ya definida y no toca el secreto', () => {
     const existing = 'mysql://root:password@localhost:3306/image_repo';
     const { env, dbHost, dbPort } = prepareEnvironment({ DATABASE_URL: existing });
@@ -54,6 +104,7 @@ describe('prepareEnvironment', () => {
 
     expect(dbHost).toBe('override-host');
     expect(dbPort).toBe('9999');
+    expect(env.DATABASE_URL).toContain('@override-host:9999/');
     expect(env.DB_HOST).toBe('override-host');
     expect(env.DB_PORT).toBe('9999');
   });
@@ -77,6 +128,21 @@ describe('prepareEnvironment', () => {
           host: 'h',
         }),
         DB_NAME: 'db',
+      });
+      expect.unreachable('debía lanzar');
+    } catch (error) {
+      expect((error as Error).message).not.toContain('super-secret-value');
+    }
+  });
+
+  it('lanza sin host/port (secreto mínimo y sin DB_HOST/DB_PORT) sin exponer la contraseña', () => {
+    try {
+      prepareEnvironment({
+        DATABASE_CREDENTIALS_JSON: JSON.stringify({
+          username: 'app_user',
+          password: 'super-secret-value',
+        }),
+        DB_NAME: 'image_repo',
       });
       expect.unreachable('debía lanzar');
     } catch (error) {
