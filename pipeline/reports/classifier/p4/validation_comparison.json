@@ -1,0 +1,189 @@
+{
+  "manifest": {
+    "path": "data\\processed\\classifier_split_manifest.json",
+    "sha256": "394743403f8a263b462687b733272e9993d7dddaea6a1229f8ee2896b82f3f7d",
+    "split": "val",
+    "samples": 203
+  },
+  "classes": [
+    "car",
+    "person"
+  ],
+  "original": {
+    "model": "artifacts\\classifier\\release\\v1.0.0\\model.pt",
+    "sha256": "fe1c2370cb9d811d32cccc27edf0beeb3c440fe758c467a9e3fb91a73e6047cb",
+    "size_bytes": 45304323,
+    "metrics": {
+      "total": 203,
+      "correct": 199,
+      "accuracy": 0.9802955665024631,
+      "macro_f1": 0.9801214257735997,
+      "per_class": {
+        "car": {
+          "precision": 0.9819819819819819,
+          "recall": 0.9819819819819819,
+          "f1": 0.9819819819819819,
+          "support": 111,
+          "predicted": 111
+        },
+        "person": {
+          "precision": 0.9782608695652174,
+          "recall": 0.9782608695652174,
+          "f1": 0.9782608695652174,
+          "support": 92,
+          "predicted": 92
+        }
+      },
+      "confusion_matrix": {
+        "rows": "true",
+        "columns": "predicted",
+        "labels": [
+          "car",
+          "person"
+        ],
+        "matrix": [
+          [
+            109,
+            2
+          ],
+          [
+            2,
+            90
+          ]
+        ]
+      }
+    }
+  },
+  "optimized": {
+    "model": "artifacts\\classifier\\edge\\v1.0.0\\model.int8.onnx",
+    "sha256": "4607b57886a72d0e931fc18529361bbbb5b7afd3d5a66a44cf9e64457bdedfff",
+    "size_bytes": 11515721,
+    "metrics": {
+      "total": 203,
+      "correct": 200,
+      "accuracy": 0.9852216748768473,
+      "macro_f1": 0.9850768212894214,
+      "per_class": {
+        "car": {
+          "precision": 0.9821428571428571,
+          "recall": 0.990990990990991,
+          "f1": 0.9865470852017937,
+          "support": 111,
+          "predicted": 112
+        },
+        "person": {
+          "precision": 0.989010989010989,
+          "recall": 0.9782608695652174,
+          "f1": 0.9836065573770493,
+          "support": 92,
+          "predicted": 91
+        }
+      },
+      "confusion_matrix": {
+        "rows": "true",
+        "columns": "predicted",
+        "labels": [
+          "car",
+          "person"
+        ],
+        "matrix": [
+          [
+            110,
+            1
+          ],
+          [
+            2,
+            90
+          ]
+        ]
+      }
+    }
+  },
+  "comparison": {
+    "changed_predictions": 1,
+    "accuracy_difference": 0.0049261083743842304,
+    "macro_f1_difference": 0.004955395515821692
+  },
+  "audit": {
+    "original_csv_recomputed": {
+      "total": 203,
+      "correct": 199,
+      "accuracy": 0.9802955665024631,
+      "macro_f1": 0.9801214257735997,
+      "per_class": {
+        "car": {
+          "precision": 0.9819819819819819,
+          "recall": 0.9819819819819819,
+          "f1": 0.9819819819819819,
+          "support": 111,
+          "predicted": 111
+        },
+        "person": {
+          "precision": 0.9782608695652174,
+          "recall": 0.9782608695652174,
+          "f1": 0.9782608695652174,
+          "support": 92,
+          "predicted": 92
+        }
+      },
+      "confusion_matrix": {
+        "rows": "true",
+        "columns": "predicted",
+        "labels": [
+          "car",
+          "person"
+        ],
+        "matrix": [
+          [
+            109,
+            2
+          ],
+          [
+            2,
+            90
+          ]
+        ]
+      }
+    },
+    "int8_csv_recomputed": {
+      "total": 203,
+      "correct": 200,
+      "accuracy": 0.9852216748768473,
+      "macro_f1": 0.9850768212894214,
+      "per_class": {
+        "car": {
+          "precision": 0.9821428571428571,
+          "recall": 0.990990990990991,
+          "f1": 0.9865470852017937,
+          "support": 111,
+          "predicted": 112
+        },
+        "person": {
+          "precision": 0.989010989010989,
+          "recall": 0.9782608695652174,
+          "f1": 0.9836065573770493,
+          "support": 92,
+          "predicted": 91
+        }
+      },
+      "confusion_matrix": {
+        "rows": "true",
+        "columns": "predicted",
+        "labels": [
+          "car",
+          "person"
+        ],
+        "matrix": [
+          [
+            110,
+            1
+          ],
+          [
+            2,
+            90
+          ]
+        ]
+      }
+    }
+  }
+}
