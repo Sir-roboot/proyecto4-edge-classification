@@ -77,7 +77,19 @@ clasificación en el dispositivo:
 
 Imagen conservada como evidencia: `docs/evidence/p4-1-2/captura-webcam.jpg`.
 
-### 3. Latencia (muestra preliminar, no es el benchmark formal)
+### 3. Entradas conocidas — ambas clases (rúbrica 2.2)
+
+Mostrando a la webcam una imagen clara de cada clase congelada, el modelo
+acierta y se confirma el orden (`car`=0, `person`=1). Imágenes conservadas en
+`docs/evidence/p4-1-2/conocida-car.jpg` y `conocida-person.jpg`; detalle en
+`docs/evidence/p4-1-2/known-inputs.txt`.
+
+| Entrada mostrada | Predicción | Confianza |
+| --- | --- | --- |
+| Carro | `car` | 0.8444 |
+| Persona | `person` | 0.9065 |
+
+### 4. Latencia (muestra preliminar, no es el benchmark formal)
 
 Inferencia en caliente sobre la misma imagen, tres corridas:
 
@@ -90,16 +102,32 @@ inferencia 30.35 ms -> person 0.96
 ~30 ms por inferencia (la primera llamada es mayor por la inicialización). El
 benchmark formal de 10 calentamientos + 100 tiempos y p50/p95 es P4-1.4.
 
-### 4. Autonomía sin red (lo que define M2)
+### 5. Autonomía sin red (lo que define M2)
 
-`offline_check.py` bloquea todos los sockets del proceso y luego clasifica. La
-inferencia termina correctamente, probando que no hay ninguna llamada de red en
-el camino de inferencia (`docs/evidence/p4-1-2/offline-proof.txt`):
+Se demostró de dos formas complementarias.
+
+**a) Desconexión física del cable/WiFi.** `offline_demo.py` corrió en bucle
+(detached, sobreviviendo a la caída del SSH) sondeando la red y clasificando en
+cada iteración. Durante el corte real, **14 clasificaciones consecutivas con la
+red inalcanzable**, todas con predicción y latencia normal. Ventana del corte:
+`14:13:33` → `14:14:52` (~1 min 19 s). Bitácora completa (57 líneas):
+`docs/evidence/p4-1-2/offline-demo.jsonl`.
+
+```json
+{"ts":"2026-10-15T14:13:33.285208-06:00","network_reachable":false,"predicted_class":"person","confidence":0.958551,"inference_ms":29.26}
+{"ts":"2026-10-15T14:14:52.308615-06:00","network_reachable":false,"predicted_class":"person","confidence":0.950154,"inference_ms":72.86}
+```
+
+**b) Ambas clases con la red bloqueada por código.** `offline_check.py` bloquea
+todos los sockets del proceso y luego clasifica cada imagen conocida; ambas
+clases aciertan sin posibilidad de usar la red
+(`docs/evidence/p4-1-2/offline-both-classes.txt`):
 
 ```json
 {"red":"bloqueada","sockets":"deshabilitados"}
-{"imagen":"captura_20261015_135202_628419.jpg","predicted_class":"person",
- "confidence":0.9639,"clasifico_sin_red":true}
+{"imagen":"captura_20261015_140501_841680.jpg","predicted_class":"car","confidence":0.8444,"clasifico_sin_red":true}
+{"red":"bloqueada","sockets":"deshabilitados"}
+{"imagen":"captura_20261015_140523_595046.jpg","predicted_class":"person","confidence":0.9065,"clasifico_sin_red":true}
 ```
 
 ## Reproducción
@@ -111,12 +139,19 @@ python edge_infer_onnx.py --model model.int8.onnx --camera               # webca
 python offline_check.py  --model model.int8.onnx --image captura.jpg     # prueba sin red
 ```
 
-## Pendiente para cerrar M2 y 2.x por completo
+## Estado de M2 y 2.x
 
-1. **Entradas conocidas (2.2):** clasificar una imagen clara de `car` y otra de
-   `person` para confirmar el orden de clases (`car`=0, `person`=1) y que el
-   modelo acierta en entradas controladas.
-2. **Demostración física sin red:** `edge_infer_onnx.py --loop` corriendo
-   mientras se desconecta el cable/WiFi (para el video/evidencia del grader).
-3. **Benchmark formal (P4-1.4):** 10 calentamientos, 100 tiempos, p50/p95.
-4. **M1 (Luis Víctor):** log de conversión `.pt v1.0.0 → .onnx int8`.
+- **M2 — demostrada:** dispositivo/cámara identificados, variante ONNX INT8
+  cargada, captura con webcam → inferencia, **ambas clases** correctas y
+  clasificación **sin red** (desconexión física + bloqueo de sockets).
+- **2.2 — lista:** resolución, canales, normalización, cuantización y entradas
+  conocidas de ambas clases.
+- **2.3 — lista:** inferencia con la variante en el dispositivo y prueba con red
+  desconectada.
+
+Pendiente (otros tickets, no bloquean M2):
+
+1. **Benchmark formal (P4-1.4):** 10 calentamientos, 100 tiempos, p50/p95.
+2. **M1 (Luis Víctor):** log de conversión `.pt v1.0.0 → .onnx int8` que ligue
+   este artefacto al modelo original.
+3. **2.4 (P4-3.1):** 20 capturas, cinco minutos y captura tras reinicio.

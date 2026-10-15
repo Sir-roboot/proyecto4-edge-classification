@@ -12,6 +12,7 @@ modelo del Proyecto 3 sin depender de la red. Ver la ficha del dispositivo en
 | `edge_infer_onnx.py` | Inferencia con la variante optimizada **ONNX INT8** vía onnxruntime. Es el camino de producción del edge. |
 | `edge_infer.py` | Camino alterno con el checkpoint **PyTorch `.pt`** original (torch). Útil para comparar original vs optimizado. |
 | `offline_check.py` | Prueba de autonomía M2: bloquea la red a nivel de proceso y clasifica, probando que no hay llamadas de red. |
+| `offline_demo.py` | Demo físico M2: bucle que sondea la red y clasifica; registra las predicciones hechas mientras la red está desconectada. |
 | `collect_device_info.sh` | (en `scripts/edge/`) Genera la ficha técnica del dispositivo. |
 
 ## Preparación en la Raspberry
@@ -43,8 +44,13 @@ python edge_infer_onnx.py --model model.int8.onnx --camera --save-dir ~/edge-cap
 # Operación continua (una captura cada N segundos)
 python edge_infer_onnx.py --model model.int8.onnx --loop 5 --save-dir ~/edge-capturas
 
-# Prueba de autonomía sin red
+# Prueba de autonomía sin red (bloqueo de sockets)
 python offline_check.py --model model.int8.onnx --image captura.jpg
+
+# Demo físico sin red: arrancar, desconectar el cable/WiFi ~1 min, reconectar.
+# Las líneas con "network_reachable": false prueban la autonomía.
+nohup python offline_demo.py --model model.int8.onnx --interval 5 \
+    > offline-demo.jsonl 2>&1 &
 ```
 
 Cada inferencia emite una línea JSON con `predicted_class`, `confidence`,

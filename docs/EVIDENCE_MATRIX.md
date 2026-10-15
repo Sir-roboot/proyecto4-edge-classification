@@ -9,7 +9,7 @@ no significa que el criterio falle: identifica trabajo que todavía debe entrega
 | Compuerta | Evidencia verificable | Responsable | Estado |
 | --- | --- | --- | --- |
 | M1 — variante del modelo propio | Referencia del modelo de Proyecto 3, mapa de clases, registro de conversión, artefactos original/optimizado y sus SHA-256 | Luis Víctor | PENDIENTE |
-| M2 — cámara e inferencia local | Raspberry y cámara identificadas; captura nueva; modelo cargado; clasificación de ambas clases con la red desconectada | Andrés | EN PROGRESO — dispositivo/cámara identificados, variante ONNX INT8 cargada, captura con webcam → inferencia (~30 ms) y autonomía sin red probada por código (`docs/P4-1-2_EDGE_INFERENCE_EVIDENCE.md`); faltan ambas clases con entrada conocida y la desconexión física |
+| M2 — cámara e inferencia local | Raspberry y cámara identificadas; captura nueva; modelo cargado; clasificación de ambas clases con la red desconectada | Andrés | LISTA — dispositivo/cámara identificados, variante ONNX INT8 cargada, captura con webcam → inferencia (~30 ms), ambas clases correctas y clasificación sin red (desconexión física de 1 min + bloqueo de sockets) (`docs/P4-1-2_EDGE_INFERENCE_EVIDENCE.md`, `docs/evidence/p4-1-2/`) |
 | M3 — AWS y portal | Un mismo `capture_id` seguido desde el dispositivo hasta el registro/imagen en AWS y Capturas Edge | Santiago + Ignacio | PENDIENTE |
 
 Si alguna compuerta queda sin demostración, el prompt limita la calificación definitiva a 60 puntos.
@@ -22,8 +22,8 @@ Si alguna compuerta queda sin demostración, el prompt limita la calificación d
 | 1.2 | Script/configuración reproducible, log de conversión y variante cargable en la Raspberry | Luis Víctor | PENDIENTE |
 | 1.3 | Mismo manifiesto de validación, predicciones por muestra, accuracy/F1 por clase y explicación de errores | Luis Víctor | PENDIENTE |
 | 2.1 | Identificación de Raspberry/cámara y capturas nuevas observables | Andrés | PENDIENTE |
-| 2.2 | Resolución, canales, normalización, cuantización/recorte y entradas conocidas | Andrés + Luis Víctor | EN PROGRESO — resolución, canales, normalización ImageNet y cuantización INT8 documentadas (`docs/P4-1-2_EDGE_INFERENCE_EVIDENCE.md`); faltan las entradas conocidas de ambas clases |
-| 2.3 | Inferencia con la variante en el dispositivo y prueba con red desconectada | Andrés | EN PROGRESO — inferencia con la variante ONNX INT8 en la Raspberry y prueba sin red por bloqueo de sockets (`docs/evidence/p4-1-2/offline-proof.txt`); falta la demostración física de desconexión |
+| 2.2 | Resolución, canales, normalización, cuantización/recorte y entradas conocidas | Andrés + Luis Víctor | LISTA — resolución, canales, normalización ImageNet y cuantización INT8 documentadas; entradas conocidas de ambas clases clasificadas correctamente (`docs/evidence/p4-1-2/known-inputs.txt`) |
+| 2.3 | Inferencia con la variante en el dispositivo y prueba con red desconectada | Andrés | LISTA — inferencia con la variante ONNX INT8 en la Raspberry; prueba sin red por desconexión física (`docs/evidence/p4-1-2/offline-demo.jsonl`) y por bloqueo de sockets (`docs/evidence/p4-1-2/offline-both-classes.txt`) |
 | 2.4 | Registro de 20 capturas, cinco minutos de operación y captura posterior a reinicio | Andrés | PENDIENTE |
 | 3.1 | Hardware, runtime, precisión, entrada y condiciones equivalentes documentadas | Luis Víctor + Andrés | PENDIENTE |
 | 3.2 | Tamaños, 10 calentamientos, 100 tiempos válidos y cálculo reproducible de p50/p95 | Luis Víctor + Andrés | PENDIENTE |
