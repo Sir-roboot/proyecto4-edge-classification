@@ -1,0 +1,64 @@
+{
+  "source": {
+    "file": "artifacts\\classifier\\release\\v1.0.0\\model.pt",
+    "sha256": "fe1c2370cb9d811d32cccc27edf0beeb3c440fe758c467a9e3fb91a73e6047cb",
+    "run_id": "44725ac6b1704fed8b06bc4f846651d8",
+    "architecture": "resnet18",
+    "classes": [
+      "car",
+      "person"
+    ]
+  },
+  "input": {
+    "shape": [
+      1,
+      3,
+      128,
+      128
+    ],
+    "dtype": "torch.float32",
+    "image_size": 128,
+    "preprocessing": {
+      "resize": [
+        128,
+        128
+      ],
+      "color_mode": "RGB",
+      "to_tensor": "scale to [0, 1]",
+      "normalize_mean": [
+        0.485,
+        0.456,
+        0.406
+      ],
+      "normalize_std": [
+        0.229,
+        0.224,
+        0.225
+      ]
+    }
+  },
+  "onnx": {
+    "file": "artifacts\\classifier\\edge\\v1.0.0\\model.onnx",
+    "sha256": "b5f4c0f61f071c92b1b5bf8200cfb6eeae7e01dbc74b20af82ad9b8f580b7eed",
+    "size_bytes": 45367016,
+    "runtime": "1.31.0"
+  },
+  "known_input_test": {
+    "pytorch_logits": [
+      [
+        -0.5947058200836182,
+        0.4715099036693573
+      ]
+    ],
+    "onnx_logits": [
+      [
+        -0.5947056412696838,
+        0.471509724855423
+      ]
+    ],
+    "max_abs_difference": 1.7881393432617188e-07,
+    "pytorch_class": "person",
+    "onnx_class": "person",
+    "same_prediction": true
+  }
+}
