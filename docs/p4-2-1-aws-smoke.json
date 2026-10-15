@@ -1,0 +1,40 @@
+{
+  "base_url": "https://d3mjwen8lb1kx3.cloudfront.net",
+  "endpoint": "https://d3mjwen8lb1kx3.cloudfront.net/api/edge-captures",
+  "capture_id": "884f1f18-77f8-4db1-b0e3-db43bc347296",
+  "image_sha256": "f243a3fae098445b6d940e9ef30c7d30bcb8fc8be42554c9e2b45442e690a800",
+  "image_key": "edge-captures/884f1f18-77f8-4db1-b0e3-db43bc347296/f243a3fae098445b6d940e9ef30c7d30bcb8fc8be42554c9e2b45442e690a800.png",
+  "image": {
+    "file": "confusion_matrix.png",
+    "mime_type": "image/png",
+    "size_bytes": 10994
+  },
+  "request": {
+    "device_id": "p4-2-1-verifier",
+    "model_version": "p4-2-1-verifier+sha256:unspecified",
+    "predicted_class": "person",
+    "base_confidence": 0.5,
+    "conflict_confidence": 0.6,
+    "timeout_ms": 15000
+  },
+  "status_codes": {
+    "created": 201,
+    "idempotent_repeat": 200,
+    "conflict": 409
+  },
+  "checks": {
+    "first_response_ok": true,
+    "first_capture_id_matches": true,
+    "first_image_sha256_matches": true,
+    "first_image_key_matches": true,
+    "repeat_response_ok": true,
+    "repeat_capture_id_matches": true,
+    "repeat_image_sha256_matches": true,
+    "repeat_image_key_matches": true,
+    "repeat_reuses_same_image_key": true,
+    "conflict_response_ok": true,
+    "conflict_reports_error": true
+  },
+  "passed": true,
+  "generated_at": "2026-10-14T19:16:55.618Z"
+}
