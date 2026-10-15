@@ -31,12 +31,11 @@ La metadata que produce valida contra el contrato
   mismos que en AWS; solo cambia la URL base.
 - **Token:** `EDGE_INGEST_TOKEN` ficticio de desarrollo del `docker-compose`.
 
-> Nota: la prueba contra el **AWS real** (`https://d3mjwen8lb1kx3.cloudfront.net`,
-> ya desplegado y verificado en P4-2.1) está **bloqueada desde esta Raspberry por
-> DNS**: su red usa un resolver con filtrado (OpenDNS FamilyShield,
-> `208.67.222.123`) que no resuelve el host de CloudFront, aunque la Raspberry sí
-> tiene ruta a Internet. Se resuelve cambiando el DNS de la Raspberry/red antes de
-> P4-3.1/M3. El cliente es el mismo; solo cambia `EDGE_API_BASE_URL`.
+> Esta corrida se hizo contra el backend local. El bloqueo de DNS inicial de la
+> Raspberry se resolvió después y el mismo cliente envió 20 capturas al AWS
+> real (`https://dmpbp69umccrl.cloudfront.net`). Véanse
+> `docs/P4-3-1_EDGE_TO_AWS_EVIDENCE.md` y
+> `docs/evidence/p4-3-1/aws-sends-summary.txt`.
 
 ## Resultados (corrida de aceptación)
 
@@ -74,12 +73,14 @@ python edge_client.py outbox                                   # pendientes
 ## Estado de rúbrica
 
 - **4.1 (edge):** el evento real de la Raspberry queda enlazado a la fotografía
-  por `capture_id` + `image_sha256` contra el backend. Falta repetirlo contra el
-  AWS real (bloqueo de DNS arriba).
-- **4.3 (edge):** fallo reversible con mensaje visible, reintento del mismo id y
-  no-duplicación verificados desde el dispositivo.
+  por `capture_id` + `image_sha256` tanto en el backend local como en AWS,
+  según la evidencia de P4-3.1.
+- **4.3 (edge):** el dispositivo muestra el fallo de red y conserva el mismo ID
+  en el outbox; también se verificaron el reintento idéntico y la no-duplicación.
+  Falta registrar en una sola secuencia el fallo seguido de un reintento exitoso
+  del mismo ID para cerrar la evidencia del criterio.
 
 ## Pendiente (otros tickets)
 
-- **P4-3.1 / M3:** 20 capturas reales de la Raspberry al AWS real (requiere
-  arreglar el DNS de la Raspberry) y contraste en el portal.
+- **M3:** las 20 capturas reales ya están en AWS; falta mostrarlas en Capturas
+  Edge (Ignacio) y contrastar cinco IDs entre dispositivo, AWS y portal (P4-3.2).

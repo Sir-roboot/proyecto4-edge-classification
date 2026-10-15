@@ -97,8 +97,8 @@ registros ni dos fotografías lógicas.
 | P4-2.2 | P0 | Andrés | Jue 15, 11:00 | Cliente edge conserva `capture_id`, muestra error y reintenta manualmente | P4-1.2, P4-2.1 | 4.1, 4.3 |
 | P4-1.3 | P1 | Luis Víctor | Jue 15, 14:00 | Predicciones original/optimizado sobre la misma validación; accuracy y F1 por clase recalculables | P4-1.1 | 1.3 |
 | P4-1.4 | P1 | Luis Víctor + Andrés | Jue 15, 17:00 | 10 calentamientos, 100 tiempos válidos, tamaños y p50/p95 bajo condiciones documentadas | P4-1.1, P4-1.2 | 3.1–3.3 |
-| P4-3.1 | P0 | Andrés + Santiago | Jue 15, 20:00 | Veinte capturas reales, ambas clases, cinco minutos, reinicio y reintento sin duplicados | P4-1.2, P4-2.2, P4-2.4 | 2.4, 4.1, 4.3 |
-| P4-3.2 | P1 | Santiago | Vie 16, 13:00 | Cinco IDs contrastados entre edge, AWS y portal; matriz de evidencias completa | P4-3.1 | M3, 6.2 |
+| P4-3.1 | P0 | Andrés + Santiago | Jue 15, 20:00 | Veinte capturas reales, ambas clases, cinco minutos, reinicio y envío a AWS con reintento sin duplicados; este tramo no espera al portal | P4-1.2, P4-2.1, P4-2.2 | 2.4, 4.1, 4.3 |
+| P4-3.2 | P1 | Santiago | Vie 16, 13:00 | Cinco IDs contrastados entre edge, AWS y portal; matriz de evidencias completa | P4-3.1, P4-2.3, P4-2.4 | M3, 6.2 |
 | P4-3.3 | P1/P2 | Todos | Vie 16, 18:00 | README reproducido y demo lista; video de 3–5 minutos solo después de aprobar la base | P4-3.2 | 6.1–6.3, V1–V3 |
 
 ## 7. Plan de choque hasta la entrega
