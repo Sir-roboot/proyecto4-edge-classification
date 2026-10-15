@@ -1,0 +1,28 @@
+P4-3.1 - envio de capturas reales de la Raspberry a AWS
+device_id: rpi-edge-01
+endpoint: https://dmpbp69umccrl.cloudfront.net/api/edge-captures
+total enviadas con 201: 20
+clases: {'person': 11, 'car': 9}
+idempotencia: reenvio del mismo capture_id -> 200 (sin duplicar); token invalido -> 401
+
+capture_id                              clase   image_key (S3)
+06f73767-d72c-4552-9205-d46d06d49d47  person  edge-captures/06f73767-d72c-4552-9205-d46d06d49d47/68c4cb28233cf653761632cba0373fda5283344ef7f187533858a08127c005e8.jpg
+08dbd20b-7f4c-4802-9ac8-71feb19b7738  person  edge-captures/08dbd20b-7f4c-4802-9ac8-71feb19b7738/ce505fedfa3ad76eba213ba8594fd81824cfbfcba0eafe72088bf1082a6eedfb.jpg
+0e9a3bdf-1e7d-4279-abb2-5fe90e7c6458  person  edge-captures/0e9a3bdf-1e7d-4279-abb2-5fe90e7c6458/24fb9c86c62539fd9e6410eb01874723654d22fd3d16c339f2f1c7d51bc96272.jpg
+1567eff4-4e97-4b40-8a40-eb12e17fa4c9  car     edge-captures/1567eff4-4e97-4b40-8a40-eb12e17fa4c9/4750c9b4102b589b121f448befa747dd1ec347ca29b7f769f8a7548764df6ec7.jpg
+2f56b348-2880-4fef-a8a6-bdcef8390e87  car     edge-captures/2f56b348-2880-4fef-a8a6-bdcef8390e87/ca899c474a367b3b08488ddcde114605988bf7e468635d6a38475b9511af6def.jpg
+4c6ece2c-5a92-4be0-932d-16b7c79a186b  car     edge-captures/4c6ece2c-5a92-4be0-932d-16b7c79a186b/ce94b7cbda68197eebfb39ba4ef19cb62ca21a50b33175f5ffb77d9bb7193315.jpg
+62efdf1a-d720-4107-bd88-4d29ad239d0d  person  edge-captures/62efdf1a-d720-4107-bd88-4d29ad239d0d/68975328b91000be6b5eb1d7fc4df91cbc9459f2c62381ee6e2628ce8fae33dc.jpg
+636ee322-0dd4-4b59-add0-4c5007abf76a  person  edge-captures/636ee322-0dd4-4b59-add0-4c5007abf76a/c6e771fe22bbc198c50efd56e2c63f655c9c6a76ab008b784426ed4c8882bb3e.jpg
+7a3c8ec2-00d1-449f-8fef-37312a8be1bc  car     edge-captures/7a3c8ec2-00d1-449f-8fef-37312a8be1bc/b122c989fc6dcc3414d7504abad946d2452070ec49c3a528fca4d311ed6f79a9.jpg
+80b9d3eb-b41d-4652-8bc3-29ff96d8528a  car     edge-captures/80b9d3eb-b41d-4652-8bc3-29ff96d8528a/6a0e4d0e0b7c9393d4af56e8de78e6350aa7854fc08319d06835685fd853002e.jpg
+8f12d77f-1067-46b9-9879-c4a102c6c62d  person  edge-captures/8f12d77f-1067-46b9-9879-c4a102c6c62d/699c2d21665e7c29238d867c88ee3dfae67d9f3d71465fb08bbd56cc09cc2cea.jpg
+98782b2f-c059-4e40-8b27-aba5b316c8ec  car     edge-captures/98782b2f-c059-4e40-8b27-aba5b316c8ec/6ab0ede91a6b33d87fe9a6dc931fce8d5b08d2f96fe4c322226d7a93fcd31d21.jpg
+a76a9b13-3fc9-4bd6-9435-102c0845cd4d  person  edge-captures/a76a9b13-3fc9-4bd6-9435-102c0845cd4d/2f4036774331e3f8044f3d6c54329cfe3dde1b699ef8baf0c488a9f924d7412d.jpg
+b7c51275-c54b-49cb-92f2-98fccf704387  car     edge-captures/b7c51275-c54b-49cb-92f2-98fccf704387/5ae8f911b658c585f998e4fbf8a805ab622f1e651f2d350feb985c8f33a88029.jpg
+bae6bc4d-f0ef-457b-996e-bdb719a01ffa  person  edge-captures/bae6bc4d-f0ef-457b-996e-bdb719a01ffa/55f6124a61581d987e562e991e80b0aefef2b2e716f36a030e01dbf885369675.jpg
+c79096cb-5117-4fb8-9f1b-9039fdc28274  car     edge-captures/c79096cb-5117-4fb8-9f1b-9039fdc28274/c8115f2244ac61712e89189c05e48dbbe29143c9945d4fa0de2a7ab93d094cff.jpg
+de22fa19-2685-4ef1-8b3b-aeeeffc0491e  person  edge-captures/de22fa19-2685-4ef1-8b3b-aeeeffc0491e/68a15ac5368cf740f8a60b467f56224867b4669f115740c58f4e6cf309195a5e.jpg
+e9dc3bee-7243-4b5b-a78e-e2b31c3429f0  person  edge-captures/e9dc3bee-7243-4b5b-a78e-e2b31c3429f0/ceefb032d216ef31a686575d1b69a6f649f531644551d1838c05bdf8e7b79aea.jpg
+f2e6765a-260f-4dd7-ab72-ea82ffe96ad3  car     edge-captures/f2e6765a-260f-4dd7-ab72-ea82ffe96ad3/90ec9feec9ad5dec65db036a78b6812613673251b850dc4873b15664a5620d93.jpg
+f36053eb-1181-467b-bb79-70e448bdc263  person  edge-captures/f36053eb-1181-467b-bb79-70e448bdc263/953baf7561caa4de0a91b51eebce243c4c0f519ce237b912de4589b92d8f512d.jpg
