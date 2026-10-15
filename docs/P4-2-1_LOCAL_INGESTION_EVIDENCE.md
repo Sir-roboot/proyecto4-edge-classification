@@ -206,13 +206,98 @@ Interpretación precisa:
   El bucket S3, sus datos, ECR y los secretos se conservaron para una
   integración posterior; la URL temporal de CloudFront ya no está activa.
 
-## Pendiente para cerrar P4-2.1 y M3
+## Lectura directa de la fila en RDS (tarea Fargate temporal)
+
+El **2026-10-14**, después de arrancar de nuevo RDS `dataset-quality-dev`, se
+ejecutó una **consulta SQL directa de solo lectura** contra la tabla
+`edge_captures` desde una tarea Fargate temporal. Esto resuelve el hueco que la
+verificación anterior dejaba abierto (allí el `200` del reintento era lectura
+*indirecta*).
+
+- **Cuenta / región:** `685538571046` / `us-east-1` (perfil `proyecto3-owner`).
+- **Red:** `vpc-0981ba8a89e311a8e`, subnet pública `subnet-081b2fffe1dc768fa`
+  (`us-east-1a`, `MapPublicIpOnLaunch=true`) y el SG `default` de esa VPC
+  `sg-0afb90148be80864e`; `assignPublicIp=ENABLED`. **No** se usó la VPC default
+  de AWS.
+- **Task definition temporal:** `dbprobe-p4-2-1:1`, derivada de la imagen
+  desplegada `edge-app-dev:0ec67c6def9dd022ab98d552d27e40c7703a58f6`
+  (`networkMode=awsvpc`, `FARGATE`, `cpu/memory` `1024/2048`).
+- **Secretos:** `DATABASE_CREDENTIALS_JSON` (secreto nativo de RDS) referenciado
+  con el mismo `valueFrom` que usa `edge-app-dev`, consumido pero **nunca
+  impreso**; `DB_HOST`/`DB_PORT`/`DB_NAME` llegaron como `environment` no
+  secreto. Ningún valor de secreto quedó en la evidencia.
+- **Logs:** se reutilizó el log group existente `/ecs/edge-app-dev` con el
+  prefijo de stream `dbprobe` (no se creó ningún log group nuevo). El stream
+  auditable es `dbprobe/dbprobe/b1f462c6a8884a148382bcf9c126ab22`.
+- **Consulta:** `SELECT capture_id, captured_at, device_id, model_version,
+  predicted_class, confidence, image_sha256, crop, image_key, mime_type,
+  size_bytes, received_at FROM edge_captures WHERE capture_id = ? LIMIT 1`, con
+  `capture_id = 884f1f18-77f8-4db1-b0e3-db43bc347296`, parametrizada y de solo
+  lectura.
+
+Resultado observado (fila real, columnas reales):
+
+| Columna | Valor devuelto |
+| --- | --- |
+| `capture_id` | `884f1f18-77f8-4db1-b0e3-db43bc347296` |
+| `captured_at` | `2026-10-14T19:16:55.597Z` |
+| `device_id` | `p4-2-1-verifier` |
+| `model_version` | `p4-2-1-verifier+sha256:unspecified` |
+| `predicted_class` | `person` |
+| `confidence` | `0.5` |
+| `image_sha256` | `f243a3fae098445b6d940e9ef30c7d30bcb8fc8be42554c9e2b45442e690a800` |
+| `crop` | `null` |
+| `image_key` | `edge-captures/884f1f18-77f8-4db1-b0e3-db43bc347296/f243a3fae098445b6d940e9ef30c7d30bcb8fc8be42554c9e2b45442e690a800.png` |
+| `mime_type` | `image/png` |
+| `size_bytes` | `10994` |
+| `received_at` | `2026-10-14T19:16:56.000Z` |
+
+Estas columnas coinciden **exactamente** con el esquema real
+(`backend/src/data/db/migrations/0005_confused_tag.sql`: `capture_id`,
+`captured_at`, `device_id`, `model_version`, `predicted_class`, `confidence`,
+`image_sha256`, `crop`, `image_key`, `mime_type`, `size_bytes`, `received_at`),
+no con una proyección supuesta.
+
+| Comprobación | Resultado observado |
+| --- | --- |
+| Tarea Fargate `b1f462c6a8884a148382bcf9c126ab22` | `STOPPED`, `EssentialContainerExited`, `exitCode` 0 |
+| Fila `edge_captures` | existe, 1 fila, la del `capture_id` buscado |
+| `image_key` de la fila vs `docs/p4-2-1-aws-smoke.json` | idénticos |
+| `image_sha256` de la fila vs smoke | idénticos |
+| `size_bytes`/`mime_type` de la fila vs smoke | `10994` / `image/png`, idénticos |
+| Objeto S3 `head-object` (`edge-captures-dev-685538571046`) | key igual a la de la fila, `ContentLength` 10,994, `ContentType` `image/png` |
+| Log group | `/ecs/edge-app-dev` reutilizado (misma `creationTime`, sin crear uno nuevo) |
+
+Con esto quedan contrastados **los tres planos del mismo `capture_id`**: la fila
+en RDS (consulta directa), el objeto en S3 (`head-object`) y el resumen sin
+secretos en `docs/p4-2-1-aws-smoke.json`.
+
+### Alcance y límites de la lectura directa
+
+- **M3 sigue PENDIENTE:** el `capture_id` no se originó en la Raspberry. El
+  evento se creó con `device_id` `p4-2-1-verifier`, por lo que todavía **no**
+  hay un recorrido de extremo a extremo dispositivo → AWS → portal.
+- La tarea de lectura era **temporal** y de solo lectura: la task definition
+  `dbprobe-p4-2-1` se **desregistró** al terminar (`INACTIVE`); no quedó ningún
+  servicio, tarea ni log group nuevo, y ningún valor de secreto se registró.
+- RDS `dataset-quality-dev` se volvió a detener al terminar la comprobación.
+- Sigue faltando un endpoint `GET` de solo lectura y la sección *Capturas Edge*
+  del portal.
+
+## Estado de P4-2.1 y pendientes de M3
+
+La ingesta idempotente en AWS, la lectura directa de la fila en RDS y la
+recuperación del objeto en S3 están verificadas. Con ello se completa el
+entregable individual P4-2.1. La compuerta integrada M3 continúa pendiente de
+las tareas del dispositivo y el portal.
 
 - ~~desplegar el servicio y el almacenamiento en AWS~~ (hecho el 2026-10-14;
   ver la sección anterior);
 - ~~identificar el recurso AWS y demostrar lectura del objeto de imagen~~
-  (`head-object` en `edge-captures-dev-685538571046`); falta la lectura
-  **directa** de la fila en RDS y un endpoint `GET` de solo lectura;
+  (`head-object` en `edge-captures-dev-685538571046`);
+- ~~leer **directamente** la fila en RDS~~ (hecho el 2026-10-14 con una tarea
+  Fargate temporal de solo lectura; ver la sección anterior);
+- publicar un endpoint `GET` de solo lectura para la API de consulta P4-2.3;
 - provocar un fallo reversible de envío desde el entorno de evaluación y
   reintentar;
 - sustituir el fixture por fotografías nuevas producidas por la Raspberry;
