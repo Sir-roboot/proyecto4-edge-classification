@@ -21,7 +21,7 @@ Si alguna compuerta queda sin demostración, el prompt limita la calificación d
 | 1.1 | Manifiesto del modelo original: versión, run, clases, preprocesamiento y hash | Luis Víctor | PENDIENTE |
 | 1.2 | Script/configuración reproducible, log de conversión y variante cargable en la Raspberry | Luis Víctor | PENDIENTE |
 | 1.3 | Mismo manifiesto de validación, predicciones por muestra, accuracy/F1 por clase y explicación de errores | Luis Víctor | PENDIENTE |
-| 2.1 | Identificación de Raspberry/cámara y capturas nuevas observables | Andrés | PENDIENTE |
+| 2.1 | Identificación de Raspberry/cámara y capturas nuevas observables | Andrés | LISTA — ficha de hardware (`docs/P4-0-3_EDGE_DEVICE_FICHA.md`) y captura real verificada por SHA-256 (`docs/evidence/p4-0-3/captura.jpg`, colecta reproducible con `scripts/edge/collect_device_info.sh`) |
 | 2.2 | Resolución, canales, normalización, cuantización/recorte y entradas conocidas | Andrés + Luis Víctor | PENDIENTE |
 | 2.3 | Inferencia con la variante en el dispositivo y prueba con red desconectada | Andrés | PENDIENTE |
 | 2.4 | Registro de 20 capturas, cinco minutos de operación y captura posterior a reinicio | Andrés | PENDIENTE |
