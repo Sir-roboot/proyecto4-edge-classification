@@ -1,0 +1,7 @@
+﻿### Verificacion de no-duplicacion (P4-2.2) capture_id=5d7e7f52-1367-49c4-89f4-6207d38cdb99
+
+## filas en edge_captures (MariaDB)
+1
+
+## objeto en MinIO (image-annotations)
+[2026-10-15 20:50:19 UTC] 279KiB STANDARD df7d44a26cad13a3522c0a5c54ec738d5da00d463ed05d693bb33cfb41edad8b.jpg
