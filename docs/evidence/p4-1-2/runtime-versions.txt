@@ -1,0 +1,6 @@
+host: raspberrypi | fecha: 2026-10-15 13:56:31-06:00
+onnxruntime 1.31.0
+torch 2.14.1+cpu
+torchvision 0.29.1+cpu
+numpy 2.5.2
+python 3.13.5

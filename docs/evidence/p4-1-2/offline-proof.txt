@@ -1,0 +1,4 @@
+=== prueba offline reproducible (salida para evidencia) ===
+imagen: /home/pi/edge-capturas/captura_20261015_135202_628419.jpg
+{"red": "bloqueada", "sockets": "deshabilitados"}
+{"imagen": "captura_20261015_135202_628419.jpg", "predicted_class": "person", "confidence": 0.9639, "clasifico_sin_red": true}
