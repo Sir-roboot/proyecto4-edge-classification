@@ -24,7 +24,7 @@ Si alguna compuerta queda sin demostración, el prompt limita la calificación d
 | 2.1 | Identificación de Raspberry/cámara y capturas nuevas observables | Andrés | PENDIENTE |
 | 2.2 | Resolución, canales, normalización, cuantización/recorte y entradas conocidas | Andrés + Luis Víctor | PENDIENTE |
 | 2.3 | Inferencia con la variante en el dispositivo y prueba con red desconectada | Andrés | PENDIENTE |
-| 2.4 | Registro de 20 capturas, cinco minutos de operación y captura posterior a reinicio | Andrés | PENDIENTE |
+| 2.4 | Registro de 20 capturas, cinco minutos de operación y captura posterior a reinicio | Andrés | LISTA — 20 capturas (ambas clases: 11 person, 9 car) en 5 min 5 s y una captura tras reinicio (uptime 1 min) en la Raspberry (`docs/P4-2-4_DEVICE_OPERATION_EVIDENCE.md`, `docs/evidence/p4-2-4/`) |
 | 3.1 | Hardware, runtime, precisión, entrada y condiciones equivalentes documentadas | Luis Víctor + Andrés | PENDIENTE |
 | 3.2 | Tamaños, 10 calentamientos, 100 tiempos válidos y cálculo reproducible de p50/p95 | Luis Víctor + Andrés | PENDIENTE |
 | 3.3 | Comparación cuantitativa y decisión sobre intercambio recursos/calidad | Luis Víctor | PENDIENTE |
