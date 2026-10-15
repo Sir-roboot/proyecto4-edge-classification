@@ -1,10 +1,9 @@
-from pathlib import Path
 import hashlib
 import json
+from pathlib import Path
 
 import numpy as np
 import onnxruntime as ort
-from PIL import Image
 from onnxruntime.quantization import (
     CalibrationDataReader,
     CalibrationMethod,
@@ -13,10 +12,10 @@ from onnxruntime.quantization import (
     quantize_static,
 )
 from onnxruntime.quantization.shape_inference import quant_pre_process
+from PIL import Image
 
 from dataset_quality.classifier.data import load_manifest, split_records
 from dataset_quality.classifier.predict import load_checkpoint
-
 
 CHECKPOINT = Path("artifacts/classifier/release/v1.0.0/model.pt")
 FP32_MODEL = Path("artifacts/classifier/edge/v1.0.0/model.onnx")
@@ -27,9 +26,7 @@ PREPROCESSED_MODEL = OUTPUT_DIR / "model.preprocessed.onnx"
 INT8_MODEL = OUTPUT_DIR / "model.int8.onnx"
 REPORT = OUTPUT_DIR / "quantization.json"
 
-EXPECTED_MANIFEST_SHA256 = (
-    "394743403f8a263b462687b733272e9993d7dddaea6a1229f8ee2896b82f3f7d"
-)
+EXPECTED_MANIFEST_SHA256 = "394743403f8a263b462687b733272e9993d7dddaea6a1229f8ee2896b82f3f7d"
 
 CALIBRATION_PER_CLASS = 64
 
@@ -49,9 +46,7 @@ class TrainCalibrationReader(CalibrationDataReader):
         loaded = load_manifest(MANIFEST)
 
         if loaded.sha256 != EXPECTED_MANIFEST_SHA256:
-            raise ValueError(
-                f"Manifest SHA-256 incorrecto: {loaded.sha256}"
-            )
+            raise ValueError(f"Manifest SHA-256 incorrecto: {loaded.sha256}")
 
         train_records = split_records(
             loaded.manifest,
@@ -69,10 +64,7 @@ class TrainCalibrationReader(CalibrationDataReader):
                 selected.append(record)
                 counts[label] = current + 1
 
-            if all(
-                counts.get(name, 0) >= CALIBRATION_PER_CLASS
-                for name in classifier.class_names
-            ):
+            if all(counts.get(name, 0) >= CALIBRATION_PER_CLASS for name in classifier.class_names):
                 break
 
         self.records = selected
@@ -85,15 +77,9 @@ class TrainCalibrationReader(CalibrationDataReader):
             image_path = Path(record.relative_path)
 
             with Image.open(image_path) as image:
-                tensor = self.classifier.transform(
-                    image.convert("RGB")
-                )
+                tensor = self.classifier.transform(image.convert("RGB"))
 
-            yield {
-                "image": tensor.unsqueeze(0)
-                .numpy()
-                .astype(np.float32)
-            }
+            yield {"image": tensor.unsqueeze(0).numpy().astype(np.float32)}
 
     def get_next(self):
         if self.iterator is None:
@@ -109,18 +95,14 @@ def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     if not FP32_MODEL.is_file():
-        raise FileNotFoundError(
-            f"No existe el ONNX FP32: {FP32_MODEL}"
-        )
+        raise FileNotFoundError(f"No existe el ONNX FP32: {FP32_MODEL}")
 
     classifier = load_checkpoint(CHECKPOINT)
 
     manifest_hash = sha256_file(MANIFEST)
 
     if manifest_hash != EXPECTED_MANIFEST_SHA256:
-        raise ValueError(
-            f"Manifest incorrecto: {manifest_hash}"
-        )
+        raise ValueError(f"Manifest incorrecto: {manifest_hash}")
 
     # Preprocesamiento recomendado antes de cuantizar
     quant_pre_process(
@@ -215,9 +197,7 @@ def main():
             "fp32_class": classifier.class_names[fp32_class],
             "int8_class": classifier.class_names[int8_class],
             "same_prediction": fp32_class == int8_class,
-            "max_abs_difference": float(
-                np.max(np.abs(fp32_logits - int8_logits))
-            ),
+            "max_abs_difference": float(np.max(np.abs(fp32_logits - int8_logits))),
         },
     }
 

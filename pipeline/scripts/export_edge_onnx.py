@@ -1,6 +1,6 @@
-from pathlib import Path
 import hashlib
 import json
+from pathlib import Path
 
 import numpy as np
 import onnx
@@ -9,16 +9,12 @@ import torch
 
 from dataset_quality.classifier.predict import load_checkpoint
 
-
 CHECKPOINT = Path("artifacts/classifier/release/v1.0.0/model.pt")
 OUTPUT_DIR = Path("artifacts/classifier/edge/v1.0.0")
 OUTPUT_MODEL = OUTPUT_DIR / "model.onnx"
 OUTPUT_REPORT = OUTPUT_DIR / "conversion.json"
 
-EXPECTED_SHA256 = (
-    "fe1c2370cb9d811d32cccc27edf0beeb"
-    "3c440fe758c467a9e3fb91a73e6047cb"
-)
+EXPECTED_SHA256 = "fe1c2370cb9d811d32cccc27edf0beeb3c440fe758c467a9e3fb91a73e6047cb"
 
 
 def sha256_file(path: Path) -> str:
@@ -38,9 +34,7 @@ def main():
     checkpoint_hash = sha256_file(CHECKPOINT)
 
     if checkpoint_hash != EXPECTED_SHA256:
-        raise ValueError(
-            f"SHA-256 incorrecto: {checkpoint_hash}"
-        )
+        raise ValueError(f"SHA-256 incorrecto: {checkpoint_hash}")
 
     # 2. Cargar checkpoint original
     classifier = load_checkpoint(CHECKPOINT)
@@ -93,17 +87,13 @@ def main():
     pytorch_array = pytorch_logits.numpy()
 
     # Diferencia numérica entre ambos runtimes
-    max_abs_diff = float(
-        np.max(np.abs(pytorch_array - onnx_logits))
-    )
+    max_abs_diff = float(np.max(np.abs(pytorch_array - onnx_logits)))
 
     pytorch_class = int(np.argmax(pytorch_array, axis=1)[0])
     onnx_class = int(np.argmax(onnx_logits, axis=1)[0])
 
     if pytorch_class != onnx_class:
-        raise RuntimeError(
-            "La predicción ONNX no coincide con PyTorch"
-        )
+        raise RuntimeError("La predicción ONNX no coincide con PyTorch")
 
     # 7. Crear evidencia de conversión
     report = {

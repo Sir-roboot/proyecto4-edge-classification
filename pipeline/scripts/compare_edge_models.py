@@ -1,7 +1,7 @@
-from pathlib import Path
 import csv
 import hashlib
 import json
+from pathlib import Path
 
 import numpy as np
 import onnxruntime as ort
@@ -16,30 +16,19 @@ from dataset_quality.classifier.metrics import (
 )
 from dataset_quality.classifier.predict import load_checkpoint
 
+CHECKPOINT = Path("artifacts/classifier/release/v1.0.0/model.pt")
 
-CHECKPOINT = Path(
-    "artifacts/classifier/release/v1.0.0/model.pt"
-)
+INT8_MODEL = Path("artifacts/classifier/edge/v1.0.0/model.int8.onnx")
 
-INT8_MODEL = Path(
-    "artifacts/classifier/edge/v1.0.0/model.int8.onnx"
-)
+MANIFEST = Path("data/processed/classifier_split_manifest.json")
 
-MANIFEST = Path(
-    "data/processed/classifier_split_manifest.json"
-)
-
-REPORT_DIR = Path(
-    "reports/classifier/p4"
-)
+REPORT_DIR = Path("reports/classifier/p4")
 
 ORIGINAL_CSV = REPORT_DIR / "validation_original_predictions.csv"
 INT8_CSV = REPORT_DIR / "validation_int8_predictions.csv"
 COMPARISON_JSON = REPORT_DIR / "validation_comparison.json"
 
-EXPECTED_MANIFEST_SHA256 = (
-    "394743403f8a263b462687b733272e9993d7dddaea6a1229f8ee2896b82f3f7d"
-)
+EXPECTED_MANIFEST_SHA256 = "394743403f8a263b462687b733272e9993d7dddaea6a1229f8ee2896b82f3f7d"
 
 
 def sha256_file(path: Path) -> str:
@@ -95,16 +84,11 @@ def main():
     loaded = load_manifest(MANIFEST)
 
     if loaded.sha256 != EXPECTED_MANIFEST_SHA256:
-        raise ValueError(
-            f"Manifest incorrecto: {loaded.sha256}"
-        )
+        raise ValueError(f"Manifest incorrecto: {loaded.sha256}")
 
     classifier = load_checkpoint(CHECKPOINT)
     class_names = classifier.class_names
-    class_to_index = {
-        name: index
-        for index, name in enumerate(class_names)
-    }
+    class_to_index = {name: index for index, name in enumerate(class_names)}
 
     validation = split_records(
         loaded.manifest,
@@ -129,9 +113,7 @@ def main():
         image_path = Path(record.relative_path)
 
         with Image.open(image_path) as image:
-            tensor = classifier.transform(
-                image.convert("RGB")
-            )
+            tensor = classifier.transform(image.convert("RGB"))
 
         batch = tensor.unsqueeze(0)
 
@@ -144,29 +126,19 @@ def main():
             dim=1,
         ).numpy()[0]
 
-        original_index = int(
-            np.argmax(original_probs)
-        )
+        original_index = int(np.argmax(original_probs))
 
         # Modelo optimizado INT8
         int8_logits = session.run(
             ["logits"],
-            {
-                "image": batch.numpy().astype(
-                    np.float32
-                )
-            },
+            {"image": batch.numpy().astype(np.float32)},
         )[0][0]
 
         int8_probs = softmax(int8_logits)
 
-        int8_index = int(
-            np.argmax(int8_probs)
-        )
+        int8_index = int(np.argmax(int8_probs))
 
-        true_index = class_to_index[
-            record.category_name
-        ]
+        true_index = class_to_index[record.category_name]
 
         y_true.append(true_index)
         original_pred.append(original_index)
@@ -180,15 +152,9 @@ def main():
             "source_image_id": record.source_image_id,
             "relative_path": record.relative_path,
             "true_label": record.category_name,
-            "predicted_label": class_names[
-                original_index
-            ],
-            "correct": (
-                original_index == true_index
-            ),
-            "confidence": float(
-                original_probs[original_index]
-            ),
+            "predicted_label": class_names[original_index],
+            "correct": (original_index == true_index),
+            "confidence": float(original_probs[original_index]),
         }
 
         int8_row = {
@@ -196,33 +162,21 @@ def main():
             "source_image_id": record.source_image_id,
             "relative_path": record.relative_path,
             "true_label": record.category_name,
-            "predicted_label": class_names[
-                int8_index
-            ],
-            "correct": (
-                int8_index == true_index
-            ),
-            "confidence": float(
-                int8_probs[int8_index]
-            ),
+            "predicted_label": class_names[int8_index],
+            "correct": (int8_index == true_index),
+            "confidence": float(int8_probs[int8_index]),
         }
 
         for index, name in enumerate(class_names):
-            original_row[f"prob_{name}"] = float(
-                original_probs[index]
-            )
+            original_row[f"prob_{name}"] = float(original_probs[index])
 
-            int8_row[f"prob_{name}"] = float(
-                int8_probs[index]
-            )
+            int8_row[f"prob_{name}"] = float(int8_probs[index])
 
         original_rows.append(original_row)
         int8_rows.append(int8_row)
 
         if number % 25 == 0:
-            print(
-                f"Procesadas {number}/{len(validation)}"
-            )
+            print(f"Procesadas {number}/{len(validation)}")
 
     original_metrics = classification_metrics(
         confusion_matrix(
@@ -256,17 +210,9 @@ def main():
 
     # Recalcular desde CSV para demostrar
     # que las métricas son auditables.
-    original_recomputed = (
-        metrics_from_predictions_csv(
-            ORIGINAL_CSV
-        )
-    )
+    original_recomputed = metrics_from_predictions_csv(ORIGINAL_CSV)
 
-    int8_recomputed = (
-        metrics_from_predictions_csv(
-            INT8_CSV
-        )
-    )
+    int8_recomputed = metrics_from_predictions_csv(INT8_CSV)
 
     report = {
         "manifest": {
@@ -290,20 +236,12 @@ def main():
         },
         "comparison": {
             "changed_predictions": changed_predictions,
-            "accuracy_difference": (
-                int8_metrics["accuracy"]
-                - original_metrics["accuracy"]
-            ),
-            "macro_f1_difference": (
-                int8_metrics["macro_f1"]
-                - original_metrics["macro_f1"]
-            ),
+            "accuracy_difference": (int8_metrics["accuracy"] - original_metrics["accuracy"]),
+            "macro_f1_difference": (int8_metrics["macro_f1"] - original_metrics["macro_f1"]),
         },
         "audit": {
-            "original_csv_recomputed":
-                original_recomputed,
-            "int8_csv_recomputed":
-                int8_recomputed,
+            "original_csv_recomputed": original_recomputed,
+            "int8_csv_recomputed": int8_recomputed,
         },
     }
 
@@ -356,15 +294,11 @@ def main():
     )
     print(
         "Accuracy difference:",
-        report["comparison"][
-            "accuracy_difference"
-        ],
+        report["comparison"]["accuracy_difference"],
     )
     print(
         "Macro F1 difference:",
-        report["comparison"][
-            "macro_f1_difference"
-        ],
+        report["comparison"]["macro_f1_difference"],
     )
 
 
