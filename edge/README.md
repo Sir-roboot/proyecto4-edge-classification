@@ -13,6 +13,7 @@ modelo del Proyecto 3 sin depender de la red. Ver la ficha del dispositivo en
 | `edge_infer.py` | Camino alterno con el checkpoint **PyTorch `.pt`** original (torch). Útil para comparar original vs optimizado. |
 | `offline_check.py` | Prueba de autonomía M2: bloquea la red a nivel de proceso y clasifica, probando que no hay llamadas de red. |
 | `offline_demo.py` | Demo físico M2: bucle que sondea la red y clasifica; registra las predicciones hechas mientras la red está desconectada. |
+| `edge_client.py` | Cliente de envío (P4-2.2): clasifica y manda la captura al backend con `POST /api/edge-captures`; conserva el `capture_id` en reintentos y usa un *outbox* local para reintentar a mano. |
 | `collect_device_info.sh` | (en `scripts/edge/`) Genera la ficha técnica del dispositivo. |
 
 ## Preparación en la Raspberry
@@ -51,6 +52,14 @@ python offline_check.py --model model.int8.onnx --image captura.jpg
 # Las líneas con "network_reachable": false prueban la autonomía.
 nohup python offline_demo.py --model model.int8.onnx --interval 5 \
     > offline-demo.jsonl 2>&1 &
+
+# Enviar la captura al backend (P4-2.2) — config por entorno:
+export EDGE_API_BASE_URL=http://<host>:3100   # sin "/" final
+export EDGE_INGEST_TOKEN=<token fuera de Git>  # Bearer, >= 32 chars
+export EDGE_DEVICE_ID=rpi-edge-01
+python edge_client.py send  --model model.int8.onnx --camera   # captura y envía
+python edge_client.py retry --capture-id <uuid>                # reintento manual
+python edge_client.py outbox                                   # listar pendientes
 ```
 
 Cada inferencia emite una línea JSON con `predicted_class`, `confidence`,
