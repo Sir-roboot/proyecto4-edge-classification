@@ -1,0 +1,23 @@
+### P4-2.2 corrida de aceptacion del cliente edge (Raspberry -> backend)
+# backend: http://192.168.1.72:3100  device_id: rpi-edge-01
+
+## (1) primer envio -> 201
+captura clasificada: car (0.844394) · guardada en outbox
+[201 CREADO] capture_id=5d7e7f52-1367-49c4-89f4-6207d38cdb99 -> {"capture_id": "5d7e7f52-1367-49c4-89f4-6207d38cdb99", "captured_at": "2026-10-15T14:50:20.862159-06:00", "device_id": "rpi-edge-01", "model_version": "onnx-int8-1.0.0+sha256:4607b57886a72d0e931fc18529361bbbb5b7afd3d5a66a44cf9e64457bdedfff", "predicted_class": "car", "confidence": 0.844394, "image_sha256": "df7d44a26cad13a3522c0a5c54ec738d5da00d463ed05d693bb33cfb41edad8b", "image_key": "edge-captures/5d7e7f52-1367-49c4-89f4-6207d38cdb99/df7d44a26cad13a3522c0a5c54ec738d5da00d463ed05d693bb33cfb41edad8b.jpg", "received_at": "2026-10-15T20:50:19.000Z"}
+
+## (2) reintento identico (mismo id, mismos bytes) -> 200
+reintentando capture_id=5d7e7f52-1367-49c4-89f4-6207d38cdb99 (mismo id, mismos bytes)
+[200 IDEMPOTENTE] capture_id=5d7e7f52-1367-49c4-89f4-6207d38cdb99 ya estaba persistido; no se duplicó. {"capture_id": "5d7e7f52-1367-49c4-89f4-6207d38cdb99", "captured_at": "2026-10-15T14:50:20.862159-06:00", "device_id": "rpi-edge-01", "model_version": "onnx-int8-1.0.0+sha256:4607b57886a72d0e931fc18529361bbbb5b7afd3d5a66a44cf9e64457bdedfff", "predicted_class": "car", "confidence": 0.844394, "image_sha256": "df7d44a26cad13a3522c0a5c54ec738d5da00d463ed05d693bb33cfb41edad8b", "image_key": "edge-captures/5d7e7f52-1367-49c4-89f4-6207d38cdb99/df7d44a26cad13a3522c0a5c54ec738d5da00d463ed05d693bb33cfb41edad8b.jpg", "received_at": "2026-10-15T20:50:19.000Z"}
+
+## (3) token invalido -> 401
+reintentando capture_id=5d7e7f52-1367-49c4-89f4-6207d38cdb99 (mismo id, mismos bytes)
+
+## (4) mismo id, contenido distinto -> 409
+  (confidence alterado, mismo capture_id)
+reintentando capture_id=5d7e7f52-1367-49c4-89f4-6207d38cdb99 (mismo id, mismos bytes)
+
+## (5) fallo de red -> queda en outbox para reintento
+[FALLO DE RED] capture_id=5d7e7f52-1367-49c4-89f4-6207d38cdb99 no obtuvo respuesta: URLError: <urlopen error [Errno 111] Connection refused>
+  Reintenta sin cambiar el id:  python edge_client.py retry --capture-id 5d7e7f52-1367-49c4-89f4-6207d38cdb99
+
+CID=5d7e7f52-1367-49c4-89f4-6207d38cdb99

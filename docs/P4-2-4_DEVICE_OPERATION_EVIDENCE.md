@@ -1,8 +1,11 @@
-# P4-2.4 — Operación sostenida del dispositivo edge
+# Operación sostenida del dispositivo edge — criterio 2.4, ticket P4-3.1
 
 **Fecha:** 2026-10-15
 **Responsable:** Quiroz Valdovinos, Andrés
 **Rúbrica asociada:** 2.4 (y parte de dispositivo de P4-3.1)
+
+> `2.4` es el **criterio de evaluación**, no el ticket P4-2.4 del plan.
+> Ese ticket corresponde al portal Capturas Edge de Ignacio.
 
 ## Objetivo
 
@@ -31,17 +34,18 @@ mostrando ambas clases congeladas frente a la cámara. Bitácora completa:
 
 ## Captura posterior a reinicio
 
-Tras reiniciar la Raspberry (`uptime` = 1 min, confirma arranque limpio), el
-dispositivo volvió a capturar y clasificar sin intervención:
+Tras reiniciar la Raspberry (`uptime` reportado: 1 min), se volvió a ejecutar
+el programa y el dispositivo capturó y clasificó:
 
 ```json
 {"captured_at":"2026-10-15T15:57:48.838800-06:00",
  "predicted_class":"person","confidence":0.985285,"inference_ms":57.65}
 ```
 
-Imagen: `docs/evidence/p4-2-4/post-reboot.jpg`. Esto demuestra que el flujo
-cámara → preprocesamiento → inferencia queda operativo después de un reinicio,
-sin pasos manuales.
+Imagen: `docs/evidence/p4-2-4/post-reboot.jpg`. Esta captura se obtuvo antes
+del recorrido sostenido de 20 imágenes; demuestra que el flujo cámara →
+preprocesamiento → inferencia puede volver a ejecutarse después de un reinicio.
+No se afirma arranque automático del programa.
 
 ## Reproducción
 
@@ -54,11 +58,8 @@ python edge_infer_onnx.py --model model.int8.onnx --camera --save-dir edge-2-4-p
 
 ## Nota sobre P4-3.1 / M3 (envío a AWS)
 
-P4-3.1 añade a lo anterior el **envío de las 20 capturas al AWS real** y el
-contraste en el portal (M3), **sin duplicados**. Esa parte está **bloqueada**
-porque el endpoint de AWS del smoke test de P4-2.1
-(`d3mjwen8lb1kx3.cloudfront.net`) **ya no resuelve en DNS** (la infraestructura
-dev se bajó tras ese smoke). Requiere que Santiago vuelva a desplegar el
-servicio (o entregue la URL vigente) y el `EDGE_INGEST_TOKEN`. El cliente de
-envío ya está probado contra el backend real (`docs/P4-2-2_EDGE_CLIENT_EVIDENCE.md`);
-al reactivarse AWS, solo cambia `EDGE_API_BASE_URL`.
+Las 20 capturas de este recorrido ya se enviaron al AWS real. El resumen de
+IDs y objetos S3 está en `docs/P4-3-1_EDGE_TO_AWS_EVIDENCE.md` y
+`docs/evidence/p4-3-1/aws-sends-summary.txt`. El tramo pendiente de M3 es su
+visualización en el portal Capturas Edge, a cargo de Ignacio; el contraste de
+cinco IDs entre dispositivo, AWS y portal corresponde a P4-3.2.
