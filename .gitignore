@@ -3,6 +3,13 @@ node_modules/
 dist/
 build/
 
+# Artefactos de modelo del edge: grandes, viven en el release del Proyecto 3,
+# no en git (su hash se registra en el model_version). Ver edge/README.md.
+*.onnx
+*.pt
+edge/edge-venv/
+edge-capturas/
+
 # Variables de entorno: se ignora cualquier .env real, pero se versionan
 # las plantillas de ejemplo.
 .env
