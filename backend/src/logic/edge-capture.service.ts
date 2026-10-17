@@ -242,3 +242,36 @@ const edgeCaptureService = createEdgeCaptureService({
 });
 
 export const ingestEdgeCapture = edgeCaptureService.ingest;
+
+/**
+ * Consulta las capturas edge persistidas, de la más reciente a la más antigua.
+ */
+export async function getEdgeCaptureList(
+  limit = 100,
+  offset = 0,
+): Promise<EdgeCaptureResponse[]> {
+  const rows = await listEdgeCaptures(limit, offset);
+  return rows.map(toEdgeCaptureResponse);
+}
+
+/**
+ * Obtiene la imagen de una captura por su identificador.
+ * Devuelve null si la captura no existe.
+ */
+export async function getEdgeCaptureImage(captureId: string): Promise<{
+  stream: Awaited<ReturnType<typeof getImageObjectStream>>;
+  mimeType: string;
+} | null> {
+  const capture = await findEdgeCaptureById(captureId);
+
+  if (!capture) {
+    return null;
+  }
+
+  const stream = await getImageObjectStream(capture.imageKey);
+
+  return {
+    stream,
+    mimeType: capture.mimeType,
+  };
+}
