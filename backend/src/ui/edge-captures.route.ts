@@ -179,6 +179,121 @@ export function registerEdgeCaptureRoutes(app: express.Express, path: string): v
       }
     }
   });
+  
+  // GET /api/edge-captures?limit=100&offset=0
+  app.get(path, async (req, res) => {
+    const limit =
+      req.query.limit === undefined ? 100 : Number(req.query.limit);
+    const offset =
+      req.query.offset === undefined ? 0 : Number(req.query.offset);
+
+    if (
+      !Number.isInteger(limit) ||
+      limit < 1 ||
+      limit > 200 ||
+      !Number.isInteger(offset) ||
+      offset < 0
+    ) {
+      res.status(400).json({
+        error: 'Los parámetros limit y offset no son válidos.',
+      });
+      return;
+    }
+
+    try {
+      const captures = await getEdgeCaptureList(limit, offset);
+
+      res.status(200).json({
+        captures,
+        limit,
+        offset,
+      });
+    } catch (error) {
+      console.error(
+        'Error al consultar el listado de capturas edge.',
+        error,
+      );
+
+      res.status(500).json({
+        error: 'No se pudieron consultar las capturas edge.',
+      });
+    }
+  });
+
+  // GET /api/edge-captures/:captureId/image
+  app.get(`${path}/:captureId/image`, async (req, res) => {
+    try {
+      const result = await getEdgeCaptureImage(req.params.captureId);
+
+      if (!result) {
+        res.status(404).json({
+          error: 'No se encontró la captura solicitada.',
+        });
+        return;
+      }
+
+      res.setHeader('Content-Type', result.mimeType);
+      res.setHeader('Cache-Control', 'private, max-age=300');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+
+      result.stream.on('error', (error) => {
+        console.error(
+          'Error al leer la imagen de una captura edge.',
+          error,
+        );
+
+        if (!res.headersSent) {
+          res.status(500).json({
+            error: 'No se pudo leer la imagen.',
+          });
+        } else {
+          res.destroy(error instanceof Error ? error : undefined);
+        }
+      });
+
+      result.stream.pipe(res);
+    } catch (error) {
+      console.error(
+        'Error al obtener la imagen de una captura edge.',
+        error,
+      );
+
+      if (!res.headersSent) {
+        res.status(500).json({
+          error: 'No se pudo obtener la imagen.',
+        });
+      } else {
+        res.destroy(error instanceof Error ? error : undefined);
+      }
+    }
+  });
+
+  // GET /api/edge-captures/:captureId
+  // Debe ir después de la ruta /:captureId/image.
+  app.get(`${path}/:captureId`, async (req, res) => {
+    try {
+      const capture = await getEdgeCaptureDetail(req.params.captureId);
+
+      if (!capture) {
+        res.status(404).json({
+          error: 'No se encontró la captura solicitada.',
+        });
+        return;
+      }
+
+      res.status(200).json(capture);
+    } catch (error) {
+      console.error(
+        'Error al consultar el detalle de una captura edge.',
+        error,
+      );
+
+      res.status(500).json({
+        error: 'No se pudo consultar el detalle de la captura.',
+      });
+    }
+  });
+
 
   app.post(
     path,
