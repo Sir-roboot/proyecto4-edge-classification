@@ -76,6 +76,7 @@ async function main() {
       sameImageSha256: detail.image_sha256 === localHash && imageHash === localHash,
       sameImageBytes: image.length === s3Bytes,
       sameApiEventTime: listed.captured_at === detail.captured_at,
+      sameOriginalCaptureTime: Date.parse(edge.captured_at) === Date.parse(detail.captured_at),
     };
     results.push({
       capture_id: id,
@@ -97,8 +98,11 @@ async function main() {
     api_base_url: baseUrl,
     s3_bucket: bucket,
     count: results.length,
+    linkage_passes: results.length === 5 && results.every((row) =>
+      Object.entries(row.checks).every(([key, value]) => key === 'sameOriginalCaptureTime' || value)),
+    capture_timestamp_passes: results.length === 5 && results.every((row) => row.checks.sameOriginalCaptureTime),
     passes: results.length === 5 && results.every((row) => row.passes),
-    note: 'photo_captured_at y event_captured_at difieren: el cliente reclasificó fotos existentes antes de enviarlas; no se exige igualdad entre esos dos instantes.',
+    note: 'captured_at debe conservar la fecha original de la foto. Estos IDs históricos tienen un desfase conocido; se informa como fallo sin modificar AWS. linkage_passes solo verifica los demás campos, no el cumplimiento íntegro del criterio 4.1.',
     results,
   };
   console.log(JSON.stringify(report, null, 2));

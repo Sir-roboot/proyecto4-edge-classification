@@ -21,9 +21,16 @@ Config por entorno (sin credenciales AWS en el dispositivo):
 
 Uso:
   python edge_client.py send  --model model.int8.onnx --camera
-  python edge_client.py send  --model model.int8.onnx --image foto.jpg
+  python edge_client.py send  --model model.int8.onnx --image foto.jpg \\
+      --captured-at 2024-05-01T12:00:00Z
   python edge_client.py retry --capture-id <uuid>
   python edge_client.py outbox
+
+`send --image` exige `--captured-at` ISO 8601 con zona explícita y lo valida
+antes de cargar el modelo, tocar el outbox o abrir un socket: una imagen vieja
+nunca se fecha con la hora del envío. `send --camera` obtiene la fecha al
+terminar la captura y no acepta `--captured-at`. El reintento reutiliza la
+metadata, el `capture_id` y los bytes exactos guardados; no reclasifica.
 """
 
 from __future__ import annotations
@@ -150,17 +157,44 @@ def _report(capture_id: str, status: int | None, body: str) -> int:
     return 4
 
 
+def _validate_send_args(args: argparse.Namespace) -> None:
+    """Valida la fuente y su fecha antes de config/modelo/outbox/red."""
+    captured_at = getattr(args, "captured_at", None)
+    if args.camera:
+        if captured_at is not None:
+            raise SystemExit(
+                "send --camera no acepta --captured-at: la fecha se toma al capturar."
+            )
+        return
+    if captured_at is None:
+        raise SystemExit(
+            "send --image requiere --captured-at ISO 8601 con zona horaria "
+            "explícita (p. ej. 2024-05-01T12:00:00Z)."
+        )
+    try:
+        eio.validate_captured_at(captured_at)
+    except ValueError as error:
+        raise SystemExit(f"--captured-at inválido: {error}") from None
+
+
 def cmd_send(args: argparse.Namespace) -> int:
+    _validate_send_args(args)
     base_url, token, device_id = _config()
     outbox = Path(args.outbox)
 
-    session, input_name, size, _ = eio.load_session(args.model)
+    session, input_name, size, _ = eio.load_session(
+        args.model, ort_optimization=getattr(args, "ort_optimization", "default")
+    )
     version = eio.model_version(args.model)
     if args.camera:
-        image_path = eio.capture(outbox / "capturas")
+        image_path, captured_at = eio.capture(outbox / "capturas")
     else:
         image_path = args.image
-    result = eio.classify(session, input_name, size, args.classes, image_path, version)
+        captured_at = args.captured_at
+    result = eio.classify(
+        session, input_name, size, args.classes, image_path, version,
+        captured_at=captured_at,
+    )
 
     capture_id = str(uuid.uuid4())
     metadata = {
@@ -240,6 +274,19 @@ def main() -> None:
     source = send.add_mutually_exclusive_group(required=True)
     source.add_argument("--image", type=Path, help="enviar un archivo existente")
     source.add_argument("--camera", action="store_true", help="capturar con la webcam y enviar")
+    send.add_argument(
+        "--captured-at",
+        type=eio.captured_at_arg,
+        metavar="ISO8601",
+        default=None,
+        help="fecha real de la imagen (obligatoria con --image; con zona horaria)",
+    )
+    send.add_argument(
+        "--ort-optimization",
+        choices=eio.ORT_OPTIMIZATION_LEVELS,
+        default="default",
+        help="nivel de optimización ORT (def: default = SessionOptions previo)",
+    )
     send.add_argument("--classes", nargs="+", default=["car", "person"])
     send.set_defaults(func=cmd_send)
 

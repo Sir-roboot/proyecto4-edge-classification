@@ -35,6 +35,10 @@ sudo apt install -y fswebcam
 
 ## Uso
 
+Los comandos siguientes se ejecutan **desde `edge/`**, con el venv activado y
+`model.int8.onnx` descargado. La guía completa desde la raíz está en
+[P4_EVALUATOR_RUNBOOK.md](../docs/P4_EVALUATOR_RUNBOOK.md).
+
 ```bash
 # Clasificar un archivo (entrada conocida)
 python edge_infer_onnx.py --model model.int8.onnx --image conocida.jpg
@@ -49,13 +53,13 @@ python edge_infer_onnx.py --model model.int8.onnx --loop 5 --save-dir ~/edge-cap
 python offline_check.py --model model.int8.onnx --image captura.jpg
 
 # Demo físico sin red: arrancar, desconectar el cable/WiFi ~1 min, reconectar.
-# Las líneas con "network_reachable": false prueban la autonomía.
+# network_reachable:false registra un sondeo fallido; observar también el corte físico.
 nohup python offline_demo.py --model model.int8.onnx --interval 5 \
     > offline-demo.jsonl 2>&1 &
 
 # Enviar la captura al backend (P4-2.2) — config por entorno:
-export EDGE_API_BASE_URL=http://<host>:3100   # sin "/" final
-export EDGE_INGEST_TOKEN=<token fuera de Git>  # Bearer, >= 32 chars
+export EDGE_API_BASE_URL='https://dmpbp69umccrl.cloudfront.net'
+# Cargar EDGE_INGEST_TOKEN desde edge/.env, recibido por canal privado; no ponerlo en Git.
 export EDGE_DEVICE_ID=rpi-edge-01
 python edge_client.py send  --model model.int8.onnx --camera   # captura y envía
 python edge_client.py retry --capture-id <uuid>                # reintento manual
@@ -71,6 +75,41 @@ de envío (P4-2.2) contra `POST /api/edge-captures`.
 
 - Las clases están congeladas: `car`, `person` (orden `car`=0, `person`=1).
 - El modelo **no** viaja en git (artefacto grande); se obtiene del release del
-  Proyecto 3. Su hash queda registrado en el `model_version`.
+  [Proyecto 4: p4-edge-model-v1.0.0-int8](https://github.com/Sir-roboot/proyecto4-edge-classification/releases/tag/p4-edge-model-v1.0.0-int8).
+  El checkpoint original `.pt` sí procede del Proyecto 3. El SHA-256 del INT8
+  es `4607b57886a72d0e931fc18529361bbbb5b7afd3d5a66a44cf9e64457bdedfff`.
 - El preprocesamiento (RGB, 128×128, normalización ImageNet) debe conservarse
   idéntico al de validación; cambiarlo desvía las predicciones.
+
+## Fecha de captura y reintentos
+
+Con `--camera`/`--loop`, `captured_at` se obtiene tras adquirir la fotografía y
+antes de inferir. `inferred_at` describe la inferencia y no sustituye la captura.
+Un archivo sin fecha puede clasificarse localmente, pero tendrá
+`captured_at: null`. Para enviarlo se exige `--captured-at` con la fecha original
+verificada en ISO8601 con zona (`Z` o un desplazamiento como `-06:00`):
+
+```bash
+python edge_client.py send --model model.int8.onnx --image foto.jpg \
+  --captured-at '2026-10-15T16:03:55.199247-06:00'
+```
+
+La fecha del ejemplo no debe copiarse a otra foto. No se usa mtime ni la hora
+actual como sustituto. `retry` conserva metadata/fecha/ID/bytes del outbox sin
+volver a inferir; los registros antiguos no se corrigen retrospectivamente.
+
+## Opciones de ONNX Runtime y prueba local
+
+`--ort-optimization default` conserva el comportamiento anterior del runtime.
+Se admiten también `basic`, `disabled`, `extended` y `all`. Para reproducir las
+entradas conocidas en Windows x64 con ONNX Runtime 1.31.0 se verificó `basic`;
+las opciones predeterminadas cambiaron algunas salidas en ese entorno.
+Esto no demuestra un fallo en Raspberry. No cambiar allí la opción ni reutilizar
+sus métricas históricas sin volver a comprobar calidad y benchmark en el dispositivo.
+
+```bash
+python edge_infer_onnx.py --model model.int8.onnx \
+  --image ../docs/evidence/p4-1-2/conocida-car.jpg --ort-optimization basic
+# Desde edge/, con numpy/onnxruntime/Pillow instalados; sin cámara, AWS ni pesos:
+python -m unittest discover -s tests -v
+```
