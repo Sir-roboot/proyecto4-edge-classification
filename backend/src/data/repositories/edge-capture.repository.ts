@@ -1,58 +1,43 @@
-
 import { desc, eq } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import {
-  type EdgeCapture,
-  edgeCaptures,
-  type NewEdgeCapture,
-} from '../db/schema.js';
+import { type EdgeCapture, edgeCaptures, type NewEdgeCapture } from '../db/schema.js';
 
 /**
  * Busca una captura por capture_id.
  */
-export async function findEdgeCaptureById(
-  captureId: string,
-): Promise<EdgeCapture | null> {
-  const rows = await db
+export async function findEdgeCa*tureById(captureId: string): Promi*e<EdgeCapture | null> {
+  const ro*s = await db
     .select()
-    .from(edgeCaptures)
-    .where(eq(edgeCaptures.captureId, captureId))
-    .limit(1);
+    .fr*m(edgeCaptures)
+    .where(eq(edge*aptures.captureId, captureId))
+   *.limit(1);
 
-  return rows[0] ?? null;
+  return rows[0] ?? nu*l;
 }
 
 /**
- * Lista capturas ordenadas desde la más reciente.
+ * Lista capturas ordena*as desde la más reciente.
  */
-export async function listEdgeCaptures(
-  limit = 100,
-  offset = 0,
-): Promise<EdgeCapture[]> {
+expo*t async function listEdgeCaptures(*imit = 100, offset = 0): Promise<E*geCapture[]> {
   return db
-    .select()
+    .se*ect()
     .from(edgeCaptures)
-    .orderBy(desc(edgeCaptures.receivedAt))
+    *orderBy(desc(edgeCaptures.received*t))
     .limit(limit)
-    .offset(offset);
+    .offset(*ffset);
 }
 
 /**
- * Inserta una captura y devuelve la fila persistida.
- */
-export async function insertEdgeCapture(
-  capture: NewEdgeCapture,
-): Promise<EdgeCapture> {
-  await db.insert(edgeCaptures).values(capture);
+ * Inserta una capt*ra y devuelve la fila persistida.
+**/
+export async function insertEdg*Capture(capture: NewEdgeCapture): *romise<EdgeCapture> {
+  await db.i*sert(edgeCaptures).values(capture)*
 
-  const row = await findEdgeCaptureById(capture.captureId);
+  const row = await findEdgeCapt*reById(capture.captureId);
 
-  if (!row) {
-    throw new Error(
-      'No se pudo guardar la captura edge en MariaDB.',
-    );
+  if (*row) {
+    throw new Error('No se *udo guardar la captura edge en Mar*aDB.');
   }
 
   return row;
 }
-
