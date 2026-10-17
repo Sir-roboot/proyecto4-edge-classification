@@ -19,6 +19,13 @@ Orden de lectura y dueños:
 5. [docs/AWS_EDGE_ARCHITECTURE.md](docs/AWS_EDGE_ARCHITECTURE.md) — para Santiago e Ignacio.
 6. [docs/P4-2-1_LOCAL_INGESTION_EVIDENCE.md](docs/P4-2-1_LOCAL_INGESTION_EVIDENCE.md) — estado verificable de la ingesta antes de AWS.
 7. [contracts/edge-capture-event.schema.json](contracts/edge-capture-event.schema.json) y [contracts/examples/edge-capture-event.json](contracts/examples/edge-capture-event.json) — para quienes implementen edge, backend o portal.
+8. [docs/P4_EVALUATOR_RUNBOOK.md](docs/P4_EVALUATOR_RUNBOOK.md) — recorrido de evaluación desde la Raspberry hasta AWS y el portal.
+9. [docs/P4-3-2_E2E_CONTRAST.md](docs/P4-3-2_E2E_CONTRAST.md) — contraste reproducible de cinco capturas reales.
+
+Portal desplegado: [Capturas Edge](https://dmpbp69umccrl.cloudfront.net/edge-captures).
+El contraste histórico de cinco IDs está verificado; una captura nueva dirigida durante la
+evaluación requiere la Raspberry y no se sustituye por ese historial. La plantilla de
+configuración del dispositivo está en [edge/.env.example](edge/.env.example), sin secretos.
 
 Cada integrante debe revisar su issue —[#5 Ignacio](https://github.com/Sir-roboot/proyecto4-edge-classification/issues/5),
 [#6 Andrés](https://github.com/Sir-roboot/proyecto4-edge-classification/issues/6),
