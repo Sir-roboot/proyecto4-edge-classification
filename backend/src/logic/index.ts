@@ -60,9 +60,12 @@ export type {
   EdgeCaptureUploadInput,
   EdgeCaptureUploadResult,
 } from './edge-capture.service.js';
+
 export {
   buildEdgeCaptureImageKey,
   createEdgeCaptureService,
+  getEdgeCaptureImage,
+  getEdgeCaptureList,
   ingestEdgeCapture,
   toEdgeCaptureResponse,
 } from './edge-capture.service.js';
