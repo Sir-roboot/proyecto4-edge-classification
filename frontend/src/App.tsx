@@ -17,6 +17,7 @@ import { SettingsPage } from "@/pages/dataset/Settings";
 import { SplitsPage } from "@/pages/dataset/Splits";
 import { VersionsPage } from "@/pages/dataset/Versions";
 import { SearchPage } from "@/pages/SearchPage";
+import { EdgeCapturesPage } from "@/pages/EdgeCaptures";
 
 export function App(): JSX.Element {
   return (
