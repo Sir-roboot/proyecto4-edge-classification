@@ -22,6 +22,7 @@ export { listCategories } from './repositories/category.repository.js';
 export {
   findEdgeCaptureById,
   insertEdgeCapture,
+  listEdgeCaptures,
 } from './repositories/edge-capture.repository.js';
 export type {
   ClassSearch,
