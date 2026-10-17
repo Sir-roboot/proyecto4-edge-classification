@@ -6,9 +6,10 @@ const links = [
   { label: "Evaluation", path: "/evaluation" },
   { label: "Models", path: "/models" },
   { label: "Inference", path: "/inference" },
+  { label: "Capturas Edge", path: "/edge-captures" },
 ];
 
-export function ClassifierNav() {
+export function ClassifierNav(): JSX.Element {
   return (
     <nav className="classifier-nav">
       {links.map((link) => (

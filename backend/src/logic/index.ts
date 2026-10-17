@@ -54,15 +54,13 @@ export type {
 export { buildDashboardSummary, buildThumbnailUrl } from './dashboard.builder.js';
 export { getDashboardSummary } from './dashboard.service.js';
 // P4-2.1 — Ingesta de capturas edge (contrato docs/EDGE_CAPTURE_CONTRACT.md).
-export type {
-  EdgeCaptureDependencies,
-  EdgeCaptureResponse,
-  EdgeCaptureUploadInput,
-  EdgeCaptureUploadResult,
-} from './edge-capture.service.js';
+
 export {
   buildEdgeCaptureImageKey,
   createEdgeCaptureService,
+  getEdgeCaptureDetail,
+  getEdgeCaptureImage,
+  getEdgeCaptureList,
   ingestEdgeCapture,
   toEdgeCaptureResponse,
 } from './edge-capture.service.js';

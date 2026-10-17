@@ -19,10 +19,13 @@ export {
   updateAnnotationRow,
 } from './repositories/annotation.repository.js';
 export { listCategories } from './repositories/category.repository.js';
+
 export {
   findEdgeCaptureById,
   insertEdgeCapture,
+  listEdgeCaptures,
 } from './repositories/edge-capture.repository.js';
+
 export type {
   ClassSearch,
   FindImagesOptions,

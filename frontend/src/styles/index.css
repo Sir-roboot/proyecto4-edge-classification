@@ -27,3 +27,230 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+
+/* Proyecto 4 — Capturas Edge */
+.edge-captures-page {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  color: #20212a;
+}
+
+.edge-captures-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.edge-captures-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.25rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.edge-captures-header p {
+  margin: 0.25rem 0;
+  color: #626477;
+}
+
+.edge-captures-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.edge-captures-header button,
+.edge-capture-detail-button,
+.edge-capture-detail-header button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid #d7d8e2;
+  border-radius: 0.5rem;
+  background: white;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.edge-captures-header button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.edge-captures-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin: 1rem 0;
+  border: 1px solid #fecaca;
+  border-radius: 0.75rem;
+  background: #fef2f2;
+  padding: 1rem;
+  color: #991b1b;
+}
+
+.edge-captures-state {
+  display: flex;
+  min-height: 8rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  border: 1px dashed #d7d8e2;
+  border-radius: 0.75rem;
+  padding: 2rem;
+  color: #626477;
+  text-align: center;
+}
+
+.edge-captures-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, 300px), 1fr)
+  );
+  gap: 1rem;
+}
+
+.edge-capture-card {
+  overflow: hidden;
+  border: 1px solid #e0e1e8;
+  border-radius: 0.75rem;
+  background: white;
+}
+
+.edge-capture-card > img {
+  display: block;
+  width: 100%;
+  height: 210px;
+  background: #f2f2f6;
+  object-fit: contain;
+}
+
+.edge-capture-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.edge-capture-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.edge-capture-class {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.edge-capture-class.car {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.edge-capture-class.person {
+  background: #f3e8ff;
+  color: #6b21a8;
+}
+
+.edge-capture-card-body p {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #626477;
+  font-size: 0.875rem;
+}
+
+.edge-capture-card-body p svg {
+  flex-shrink: 0;
+}
+
+.edge-capture-detail-button {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.edge-captures-detail-state {
+  padding: 0.75rem 0;
+  color: #626477;
+}
+
+.edge-capture-detail {
+  margin-top: 1.5rem;
+  border: 1px solid #d7d8e2;
+  border-radius: 0.75rem;
+  background: white;
+  padding: 1.25rem;
+}
+
+.edge-capture-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.edge-capture-detail-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.edge-capture-detail dl {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.4fr) minmax(0, 1fr);
+  gap: 0.6rem 1rem;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+}
+
+.edge-capture-detail dt {
+  color: #626477;
+}
+
+.edge-capture-detail dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-weight: 500;
+}
+
+@media (max-width: 600px) {
+  .edge-captures-page {
+    padding: 1rem;
+  }
+
+  .edge-captures-header {
+    flex-direction: column;
+  }
+
+  .edge-capture-detail dl {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+
+  .edge-capture-detail dd {
+    margin-bottom: 0.6rem;
+  }
+}
+

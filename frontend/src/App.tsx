@@ -4,6 +4,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { ClassifierAppLayout } from "@/components/layout/ClassifierAppLayout";
 import { DatasetAppLayout } from "@/components/layout/DatasetAppLayout";
 import { UploadScreen } from "@/components/upload/UploadScreen";
+import { EdgeCapturesPage as ClassifierEdgeCapturesPage } from "@/pages/classifier/EdgeCaptures";
 import { EvaluationPage } from "@/pages/classifier/Evaluation";
 import { ExperimentsPage } from "@/pages/classifier/Experiments";
 import { Inference } from "@/pages/classifier/Inference";
@@ -16,6 +17,7 @@ import { OverviewPage } from "@/pages/dataset/Overview";
 import { SettingsPage } from "@/pages/dataset/Settings";
 import { SplitsPage } from "@/pages/dataset/Splits";
 import { VersionsPage } from "@/pages/dataset/Versions";
+import { EdgeCapturesPage as AnnotationEdgeCapturesPage } from "@/pages/EdgeCaptures";
 import { SearchPage } from "@/pages/SearchPage";
 
 export function App(): JSX.Element {
@@ -38,6 +40,7 @@ export function App(): JSX.Element {
           necesita pasarle su propio contenido de filtros como sidebarExtra
           — ver SearchPage.tsx. */}
       <Route path="/search" element={<SearchPage />} />
+      <Route path="/annotation/edge-captures" element={<AnnotationEdgeCapturesPage />} />
       <Route
         path="/upload"
         element={
@@ -107,6 +110,7 @@ export function App(): JSX.Element {
         <Route path="/evaluation" element={<EvaluationPage />} />
         <Route path="/models" element={<ModelsPage />} />
         <Route path="/inference" element={<Inference />} />
+        <Route path="/edge-captures" element={<ClassifierEdgeCapturesPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
