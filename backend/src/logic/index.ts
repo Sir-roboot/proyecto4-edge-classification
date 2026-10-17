@@ -55,7 +55,6 @@ export { buildDashboardSummary, buildThumbnailUrl } from './dashboard.builder.js
 export { getDashboardSummary } from './dashboard.service.js';
 // P4-2.1 — Ingesta de capturas edge (contrato docs/EDGE_CAPTURE_CONTRACT.md).
 
-
 export {
   buildEdgeCaptureImageKey,
   createEdgeCaptureService,
