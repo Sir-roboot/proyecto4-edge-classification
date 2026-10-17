@@ -1,11 +1,18 @@
+
 import { desc, eq } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import { type EdgeCapture, edgeCaptures, type NewEdgeCapture } from '../db/schema.js';
+import {
+  type EdgeCapture,
+  edgeCaptures,
+  type NewEdgeCapture,
+} from '../db/schema.js';
 
 /**
- * Busca una captura por su capture_id.
+ * Busca una captura por capture_id.
  */
-export async function findEdgeCaptureById(captureId: string): Promise<EdgeCapture | null> {
+export async function findEdgeCaptureById(
+  captureId: string,
+): Promise<EdgeCapture | null> {
   const rows = await db
     .select()
     .from(edgeCaptures)
@@ -16,9 +23,12 @@ export async function findEdgeCaptureById(captureId: string): Promise<EdgeCaptur
 }
 
 /**
- * Consulta capturas ordenadas desde la más reciente.
+ * Lista capturas ordenadas desde la más reciente.
  */
-export async function listEdgeCaptures(limit = 100, offset = 0): Promise<EdgeCapture[]> {
+export async function listEdgeCaptures(
+  limit = 100,
+  offset = 0,
+): Promise<EdgeCapture[]> {
   return db
     .select()
     .from(edgeCaptures)
@@ -30,14 +40,19 @@ export async function listEdgeCaptures(limit = 100, offset = 0): Promise<EdgeCap
 /**
  * Inserta una captura y devuelve la fila persistida.
  */
-export async function insertEdgeCapture(capture: NewEdgeCapture): Promise<EdgeCapture> {
+export async function insertEdgeCapture(
+  capture: NewEdgeCapture,
+): Promise<EdgeCapture> {
   await db.insert(edgeCaptures).values(capture);
 
   const row = await findEdgeCaptureById(capture.captureId);
 
   if (!row) {
-    throw new Error('No se pudo guardar la captura edge en MariaDB.');
+    throw new Error(
+      'No se pudo guardar la captura edge en MariaDB.',
+    );
   }
 
   return row;
 }
+
