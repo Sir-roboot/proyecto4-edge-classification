@@ -1,0 +1,26 @@
+P4-4.3 — secuencia enviada por Andrés desde la Raspberry, 2026-10-16.
+Token y credenciales omitidos. El mismo capture_id y los mismos bytes se usan en los reintentos.
+
+(1) Envío con red rota (EDGE_API_BASE_URL=http://127.0.0.1:1):
+[FALLO DE RED] capture_id=dca2bfb9-7786-4f5f-b455-2df50be4ca36 no obtuvo respuesta: URLError: <urlopen error [Errno 111] Connection refused>
+Reintenta sin cambiar el id: python edge_client.py retry --capture-id dca2bfb9-7786-4f5f-b455-2df50be4ca36
+captura clasificada: person (0.996508), guardada en outbox
+
+(2) Outbox pendiente:
+dca2bfb9-7786-4f5f-b455-2df50be4ca36 [pending] person (0.996508) 2026-10-16T17:37:40.950456-06:00
+
+(3) Reintento contra AWS, mismo capture_id:
+[201 CREADO] capture_id=dca2bfb9-7786-4f5f-b455-2df50be4ca36
+captured_at=2026-10-16T17:37:40.950456-06:00
+image_sha256=ceefb032d216ef31a686575d1b69a6f649f531644551d1838c05bdf8e7b79aea
+image_key=edge-captures/dca2bfb9-7786-4f5f-b455-2df50be4ca36/ceefb032d216ef31a686575d1b69a6f649f531644551d1838c05bdf8e7b79aea.jpg
+received_at=2026-10-16T23:37:43.000Z
+
+(4) Segundo reintento contra AWS, mismo capture_id:
+[200 IDEMPOTENTE] capture_id=dca2bfb9-7786-4f5f-b455-2df50be4ca36; no se duplicó.
+
+(5) Lectura independiente de Santiago, 2026-10-16:
+GET /api/edge-captures?limit=100&offset=0: exactamente una fila con este capture_id.
+GET /api/edge-captures/<capture_id>: clase person y captured_at idénticos al outbox.
+GET /api/edge-captures/<capture_id>/image: 290405 bytes; SHA-256 igual al del paso (3).
+S3 HeadObject en edge-captures-dev-685538571046: 290405 bytes para el image_key del paso (3).
