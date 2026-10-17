@@ -364,5 +364,6 @@ export async function getEdgeCaptureImage(
     mimeType: row.mimeType,
   };
 }
+}
 
 }
