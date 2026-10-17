@@ -274,4 +274,95 @@ export async function getEdgeCaptureImage(captureId: string): Promise<{
     stream,
     mimeType: capture.mimeType,
   };
+  
+/**
+ * Lista las capturas persistidas y las transforma al contrato de la API.
+ */
+export async function getEdgeCaptureList(
+  limit = 100,
+  offset = 0,
+): Promise<EdgeCaptureResponse[]> {
+  const rows = await listEdgeCaptures(limit, offset);
+  return rows.map(toEdgeCaptureResponse);
+}
+
+/**
+ * Consulta el detalle de una captura por capture_id.
+ */
+export async function getEdgeCaptureDetail(
+  captureId: string,
+): Promise<EdgeCaptureResponse | null> {
+  const row = await findEdgeCaptureById(captureId);
+
+  return row ? toEdgeCaptureResponse(row) : null;
+}
+
+/**
+ * Recupera la imagen original desde el almacenamiento privado.
+ */
+export async function getEdgeCaptureImage(
+  captureId: string,
+): Promise<{
+  stream: Awaited<ReturnType<typeof getImageObjectStream>>;
+  mimeType: string;
+} | null> {
+  const row = await findEdgeCaptureById(captureId);
+
+  if (!row) {
+    return null;
+  }
+
+  const stream = await getImageObjectStream(row.imageKey);
+
+  return {
+    stream,
+    mimeType: row.mimeType,
+  };
+}
+
+/**
+ * Lista las capturas persistidas y las transforma al contrato de la API.
+ */
+export async function getEdgeCaptureList(
+  limit = 100,
+  offset = 0,
+): Promise<EdgeCaptureResponse[]> {
+  const rows = await listEdgeCaptures(limit, offset);
+  return rows.map(toEdgeCaptureResponse);
+}
+
+/**
+ * Consulta el detalle de una captura por capture_id.
+ */
+export async function getEdgeCaptureDetail(
+  captureId: string,
+): Promise<EdgeCaptureResponse | null> {
+  const row = await findEdgeCaptureById(captureId);
+
+  return row ? toEdgeCaptureResponse(row) : null;
+}
+
+/**
+ * Recupera la imagen original desde el almacenamiento privado.
+ */
+export async function getEdgeCaptureImage(
+  captureId: string,
+): Promise<{
+  stream: Awaited<ReturnType<typeof getImageObjectStream>>;
+  mimeType: string;
+} | null> {
+  const row = await findEdgeCaptureById(captureId);
+
+  if (!row) {
+    return null;
+  }
+
+  const stream = await getImageObjectStream(row.imageKey);
+
+  return {
+    stream,
+    mimeType: row.mimeType,
+  };
+}
+
 }
