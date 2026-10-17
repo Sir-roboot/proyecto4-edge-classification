@@ -7,7 +7,9 @@ línea JSONL con la hora, el estado de la red y la predicción.
 Pensado para la demostración física: se arranca con `nohup` para que sobreviva
 a la caída del SSH, se **desconecta el cable/WiFi** un minuto y se reconecta.
 Las líneas con `"network_reachable": false` y `predicted_class` presente
-prueban que el dispositivo siguió clasificando sin red.
+registran inferencia mientras falla el sondeo de un destino. Deben acompañarse
+de la observación del corte físico de red; ese sondeo no prueba por sí solo
+que todas las interfaces o rutas estuvieran desconectadas.
 
 El sondeo de red es independiente del camino de inferencia (el modelo ONNX no
 abre sockets); solo sirve para fechar el corte en la misma bitácora.
@@ -42,17 +44,28 @@ def main() -> None:
     parser.add_argument("--model", required=True, type=Path)
     parser.add_argument("--interval", type=float, default=5.0)
     parser.add_argument("--save-dir", type=Path, default=Path.home() / "edge-capturas")
+    parser.add_argument(
+        "--ort-optimization",
+        choices=eio.ORT_OPTIMIZATION_LEVELS,
+        default="default",
+        help="nivel de optimización ORT (def: default = SessionOptions previo)",
+    )
     parser.add_argument("--classes", nargs="+", default=["car", "person"])
     args = parser.parse_args()
 
-    session, input_name, size, _ = eio.load_session(args.model)
+    session, input_name, size, _ = eio.load_session(
+        args.model, ort_optimization=args.ort_optimization
+    )
     version = eio.model_version(args.model)
 
     while True:
         net = network_reachable()
         try:
-            image_path = eio.capture(args.save_dir)
-            result = eio.classify(session, input_name, size, args.classes, image_path, version)
+            image_path, captured_at = eio.capture(args.save_dir)
+            result = eio.classify(
+                session, input_name, size, args.classes, image_path, version,
+                captured_at=captured_at,
+            )
             line = {
                 "ts": result["captured_at"],
                 "network_reachable": net,

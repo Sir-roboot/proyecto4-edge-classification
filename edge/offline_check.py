@@ -11,6 +11,8 @@ código que ni siquiera existe la posibilidad de usar la red.
 
 Uso:
     python offline_check.py --model model.int8.onnx --image captura.jpg
+    python offline_check.py --model model.int8.onnx --image captura.jpg \\
+        --ort-optimization disabled
 """
 
 from __future__ import annotations
@@ -20,15 +22,53 @@ import json
 import socket
 from pathlib import Path
 
+import numpy as np
+from PIL import Image
+
+import edge_infer_onnx as eio
+
 
 def _blocked(*args, **kwargs):
     raise OSError("red deshabilitada por offline_check (prueba de autonomía M2)")
+
+
+def run_check(model_path: Path, image_path: Path, classes: list[str],
+              ort_optimization: str = "default") -> dict:
+    """Carga con el loader común y clasifica sin tocar la red."""
+    session, input_name, size, meta = eio.load_session(
+        model_path, ort_optimization=ort_optimization
+    )
+    with Image.open(image_path) as image:
+        batch = eio.preprocess(image, size)
+    raw = session.run(None, {input_name: batch})[0]
+    probabilities = eio.to_probabilities(np.asarray(raw, dtype=np.float32).reshape(-1))
+    if len(probabilities) != len(classes):
+        raise SystemExit(
+            f"el modelo produjo {len(probabilities)} salidas pero hay "
+            f"{len(classes)} clases {classes}"
+        )
+    index = int(np.argmax(probabilities))
+    return {
+        "imagen": image_path.name,
+        "predicted_class": classes[index],
+        "confidence": round(float(probabilities[index]), 4),
+        "clasifico_sin_red": True,
+        "runtime": meta["runtime"],
+        "providers": meta["providers"],
+        "ort_optimization": meta["optimization"],
+    }
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", required=True, type=Path)
     parser.add_argument("--image", required=True, type=Path)
+    parser.add_argument(
+        "--ort-optimization",
+        choices=eio.ORT_OPTIMIZATION_LEVELS,
+        default="default",
+        help="nivel de optimización ORT (def: default = SessionOptions previo)",
+    )
     parser.add_argument("--classes", nargs="+", default=["car", "person"])
     args = parser.parse_args()
 
@@ -38,27 +78,9 @@ def main() -> None:
     socket.getaddrinfo = _blocked
     print(json.dumps({"red": "bloqueada", "sockets": "deshabilitados"}), flush=True)
 
-    import numpy as np
-    import onnxruntime as ort
-    from PIL import Image
-
-    session = ort.InferenceSession(str(args.model), providers=["CPUExecutionProvider"])
-    mean = np.array([0.485, 0.456, 0.406], dtype=np.float32).reshape(3, 1, 1)
-    std = np.array([0.229, 0.224, 0.225], dtype=np.float32).reshape(3, 1, 1)
-    image = Image.open(args.image).convert("RGB").resize((128, 128), Image.BILINEAR)
-    tensor = ((np.asarray(image, dtype=np.float32) / 255.0).transpose(2, 0, 1) - mean) / std
-    logits = session.run(None, {"image": tensor[np.newaxis].astype(np.float32)})[0].reshape(-1)
-    exp = np.exp(logits - logits.max())
-    probabilities = exp / exp.sum()
-    index = int(probabilities.argmax())
     print(
         json.dumps(
-            {
-                "imagen": args.image.name,
-                "predicted_class": args.classes[index],
-                "confidence": round(float(probabilities[index]), 4),
-                "clasifico_sin_red": True,
-            }
+            run_check(args.model, args.image, args.classes, args.ort_optimization)
         ),
         flush=True,
     )

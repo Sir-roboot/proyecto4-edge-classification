@@ -21,6 +21,7 @@ Orden de lectura y dueños:
 7. [contracts/edge-capture-event.schema.json](contracts/edge-capture-event.schema.json) y [contracts/examples/edge-capture-event.json](contracts/examples/edge-capture-event.json) — para quienes implementen edge, backend o portal.
 8. [docs/P4_EVALUATOR_RUNBOOK.md](docs/P4_EVALUATOR_RUNBOOK.md) — recorrido de evaluación desde la Raspberry hasta AWS y el portal.
 9. [docs/P4-3-2_E2E_CONTRAST.md](docs/P4-3-2_E2E_CONTRAST.md) — contraste reproducible de cinco capturas reales.
+10. [Manifiesto de validación recuperable](docs/evidence/p4-1-3/validation-manifest.zip) — bytes originales del Proyecto 3; comprobarlos junto con los CSV mediante `python scripts/verify_p4_validation_evidence.py`, sin AWS ni otra copia del proyecto.
 
 Portal desplegado: [Capturas Edge](https://dmpbp69umccrl.cloudfront.net/edge-captures).
 El contraste histórico de cinco IDs está verificado; una captura nueva dirigida durante la

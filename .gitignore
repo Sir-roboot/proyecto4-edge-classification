@@ -3,7 +3,7 @@ node_modules/
 dist/
 build/
 
-# Artefactos de modelo del edge: grandes, viven en el release del Proyecto 3,
+# Artefactos de modelo del edge: grandes, INT8 en release de P4 y original en P3,
 # no en git (su hash se registra en el model_version). Ver edge/README.md.
 *.onnx
 *.pt

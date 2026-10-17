@@ -16,7 +16,7 @@ Origen local: `docs/evidence/p4-2-4/operation-log.jsonl` (foto, clase, confianza
 | `de22fa19-2685-4ef1-8b3b-aeeeffc0491e` | person | 0.914339 | 288594 | 377 s |
 | `f2e6765a-260f-4dd7-ab72-ea82ffe96ad3` | car | 0.743282 | 377912 | 494 s |
 
-En **los cinco** coincidieron el ID del listado y detalle, clase, confianza, versión del modelo, `image_key`, SHA-256 calculado de los bytes recuperados por la API y longitud del objeto confirmada por S3. El dispositivo declarado por el evento es `rpi-edge-01`. El verificador de solo lectura terminó con `"count": 5` y `"passes": true`:
+En **los cinco** coincidieron el ID del listado y detalle, clase, confianza, versión del modelo, `image_key`, SHA-256 calculado de los bytes recuperados por la API y longitud del objeto confirmada por S3. El dispositivo declarado por el evento es `rpi-edge-01`. La **versión anterior** del verificador terminó con `"count": 5` y `"passes": true`, sin comprobar la igualdad de la fecha original. Se conserva ese resultado como histórico, no como aprobación del criterio completo:
 
 ```bash
 # Desde la raíz del repo; AWS CLI con permiso de lectura S3, sin credenciales en el comando:
@@ -26,5 +26,15 @@ node scripts/verify-p4-3-2-readonly.mjs --profile <perfil-de-lectura>
 El portal se abrió con Edge headless en `/edge-captures`: el DOM renderizado mostró **los cinco IDs**, tarjetas de capturas y la navegación de Classifier Portal. La página `/dashboard` del portal anterior mostró el enlace a Capturas Edge. El detalle y la imagen se comprobaron además por sus rutas HTTP. El evaluador puede abrir cualquiera de las cinco tarjetas y pulsar **Consultar detalle** para ver fecha, dispositivo, versión y SHA-256; la prueba automatizada del frontend cubre ese control y los estados carga/vacío/error/actualizar.
 
 **Distinción de fechas:** las fotos de `operation-log.jsonl` fueron tomadas antes del envío. `edge_client.py send --image` volvió a clasificar esos archivos y generó un **nuevo evento** con un `captured_at` posterior; por eso los cinco instantes de foto original y evento AWS difieren 377–567 segundos. El listado, detalle y portal sí usan el mismo `captured_at` del evento AWS. No se presenta la hora de la foto original como idéntica a la del evento. Para la demostración final conviene usar `send --camera`, que crea el evento al capturar una foto nueva.
+
+**Corrección de interpretación:** el contrato exige fecha de captura de la foto,
+no fecha de creación/reclasificación del evento. El desfase anterior es un defecto
+real de los registros históricos, aunque su imagen esté correctamente enlazada.
+El verificador actual exige ambos aspectos: para estos IDs se espera
+`linkage_passes: true`, `capture_timestamp_passes: false`, `passes: false`
+y código de salida 1. No reescribe objetos ni fechas. El cliente corregido exige
+fecha original explícita para `send --image`, y obtiene la fecha de cámara antes
+de inferir. Debe validarse con una nueva captura; no se modifican estos registros
+para aparentar que la prueba histórica tuvo otro resultado.
 
 Esta prueba reutilizó capturas históricas: **no** reemplaza la captura dirigida nueva con la Raspberry ante el evaluador. La secuencia de fallo de red → reintento `201` → repetición `200` de otra captura real está en `docs/evidence/p4-4-3/network-retry-sequence.txt` y fue contrastada por consulta de solo lectura.
