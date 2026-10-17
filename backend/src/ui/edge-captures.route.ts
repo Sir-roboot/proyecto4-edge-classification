@@ -7,11 +7,13 @@ import {
   EDGE_CAPTURE_MAX_METADATA_BYTES,
   EdgeCaptureBadRequestError,
   EdgeCaptureError,
+  getEdgeCaptureDetail,
   getEdgeCaptureImage,
   getEdgeCaptureList,
   ingestEdgeCapture,
   toEdgeCaptureResponse,
 } from '../logic/index.js';
+
 
 /**
  * P4-2.1 — Ruta compartida de ingesta de capturas edge.
