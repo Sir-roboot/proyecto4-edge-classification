@@ -110,6 +110,13 @@ export function App(): JSX.Element {
         <Route path="/inference" element={<Inference />} />
       </Route>
 
+      <Route
+  path="/edge-captures"
+  element={
+    <EdgeCapturesPage />
+  }
+/>
+
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
