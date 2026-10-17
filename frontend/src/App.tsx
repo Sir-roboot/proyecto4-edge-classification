@@ -18,6 +18,7 @@ import { SplitsPage } from "@/pages/dataset/Splits";
 import { VersionsPage } from "@/pages/dataset/Versions";
 import { SearchPage } from "@/pages/SearchPage";
 import { EdgeCapturesPage } from "@/pages/EdgeCaptures";
+import { EdgeCapturesPage } from "@/pages/classifier/EdgeCaptures";
 
 export function App(): JSX.Element {
   return (
