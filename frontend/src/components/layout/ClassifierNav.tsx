@@ -1,4 +1,3 @@
-
 import { NavLink } from "react-router-dom";
 
 const links = [
@@ -18,9 +17,7 @@ export function ClassifierNav(): JSX.Element {
           key={link.path}
           to={link.path}
           className={({ isActive }) =>
-            isActive
-              ? "classifier-nav-link active"
-              : "classifier-nav-link"
+            isActive ? "classifier-nav-link active" : "classifier-nav-link"
           }
         >
           {link.label}
@@ -29,4 +26,3 @@ export function ClassifierNav(): JSX.Element {
     </nav>
   );
 }
-

@@ -5,38 +5,38 @@ import { type EdgeCapture, edgeCaptures, type NewEdgeCapture } from '../db/schem
 /**
  * Busca una captura por capture_id.
  */
-export async function findEdgeCa*tureById(captureId: string): Promi*e<EdgeCapture | null> {
-  const ro*s = await db
+export async function findEdgeCaptureById(captureId: string): Promise<EdgeCapture | null> {
+  const rows = await db
     .select()
-    .fr*m(edgeCaptures)
-    .where(eq(edge*aptures.captureId, captureId))
-   *.limit(1);
-
-  return rows[0] ?? nu*l;
-}
-
-/**
- * Lista capturas ordena*as desde la más reciente.
- */
-expo*t async function listEdgeCaptures(*imit = 100, offset = 0): Promise<E*geCapture[]> {
-  return db
-    .se*ect()
     .from(edgeCaptures)
-    *orderBy(desc(edgeCaptures.received*t))
-    .limit(limit)
-    .offset(*ffset);
+    .where(eq(edgeCaptures.captureId, captureId))
+    .limit(1);
+
+  return rows[0] ?? null;
 }
 
 /**
- * Inserta una capt*ra y devuelve la fila persistida.
-**/
-export async function insertEdg*Capture(capture: NewEdgeCapture): *romise<EdgeCapture> {
-  await db.i*sert(edgeCaptures).values(capture)*
+ * Lista capturas ordenadas desde la más reciente.
+ */
+export async function listEdgeCaptures(limit = 100, offset = 0): Promise<EdgeCapture[]> {
+  return db
+    .select()
+    .from(edgeCaptures)
+    .orderBy(desc(edgeCaptures.receivedAt))
+    .limit(limit)
+    .offset(offset);
+}
 
-  const row = await findEdgeCapt*reById(capture.captureId);
+/**
+ * Inserta una captura y devuelve la fila persistida.
+ */
+export async function insertEdgeCapture(capture: NewEdgeCapture): Promise<EdgeCapture> {
+  await db.insert(edgeCaptures).values(capture);
 
-  if (*row) {
-    throw new Error('No se *udo guardar la captura edge en Mar*aDB.');
+  const row = await findEdgeCaptureById(capture.captureId);
+
+  if (!row) {
+    throw new Error('No se pudo guardar la captura edge en MariaDB.');
   }
 
   return row;

@@ -1,15 +1,12 @@
-
 import { Readable } from 'node:stream';
 import type { Express } from 'express';
 import express from 'express';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
-  process.env.DATABASE_URL ??=
-    'mysql://test:test@127.0.0.1:3306/test';
+  process.env.DATABASE_URL ??= 'mysql://test:test@127.0.0.1:3306/test';
   process.env.OBJECT_STORE_BUCKET ??= 'test-bucket';
-  process.env.EDGE_INGEST_TOKEN ??=
-    'test-edge-ingest-token-123456';
+  process.env.EDGE_INGEST_TOKEN ??= 'test-edge-ingest-token-1234567890123456';
 
   return {
     getEdgeCaptureList: vi.fn(),
@@ -30,9 +27,7 @@ vi.mock('../src/logic/index.js', () => {
   }
 
   return {
-    authenticateEdgeIngest: vi.fn(
-      (_req: unknown, _res: unknown, next: () => void) => next(),
-    ),
+    authenticateEdgeIngest: vi.fn((_req: unknown, _res: unknown, next: () => void) => next()),
     EDGE_CAPTURE_MAX_IMAGE_BYTES: 10 * 1024 * 1024,
     EDGE_CAPTURE_MAX_METADATA_BYTES: 4096,
     EdgeCaptureBadRequestError,
@@ -69,9 +64,7 @@ async function startServer(): Promise<string> {
   const currentServer = app.listen(0);
   server = currentServer;
 
-  await new Promise<void>((resolve) =>
-    currentServer.once('listening', resolve),
-  );
+  await new Promise<void>((resolve) => currentServer.once('listening', resolve));
 
   const address = currentServer.address();
 
@@ -87,9 +80,7 @@ afterEach(async () => {
 
   if (server) {
     await new Promise<void>((resolve, reject) =>
-      server?.close((error) =>
-        error ? reject(error) : resolve(),
-      ),
+      server?.close((error) => (error ? reject(error) : resolve())),
     );
   }
 
@@ -101,9 +92,7 @@ describe('P4-2.3 API de consulta de capturas edge', () => {
     mocks.getEdgeCaptureList.mockResolvedValue([capture]);
 
     const base = await startServer();
-    const response = await fetch(
-      `${base}/api/edge-captures?limit=10&offset=0`,
-    );
+    const response = await fetch(`${base}/api/edge-captures?limit=10&offset=0`);
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
@@ -116,9 +105,7 @@ describe('P4-2.3 API de consulta de capturas edge', () => {
 
   it('rechaza parámetros de paginación inválidos', async () => {
     const base = await startServer();
-    const response = await fetch(
-      `${base}/api/edge-captures?limit=999`,
-    );
+    const response = await fetch(`${base}/api/edge-captures?limit=999`);
 
     expect(response.status).toBe(400);
   });
@@ -127,24 +114,18 @@ describe('P4-2.3 API de consulta de capturas edge', () => {
     mocks.getEdgeCaptureDetail.mockResolvedValue(capture);
 
     const base = await startServer();
-    const response = await fetch(
-      `${base}/api/edge-captures/capture-123`,
-    );
+    const response = await fetch(`${base}/api/edge-captures/capture-123`);
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual(capture);
-    expect(mocks.getEdgeCaptureDetail).toHaveBeenCalledWith(
-      'capture-123',
-    );
+    expect(mocks.getEdgeCaptureDetail).toHaveBeenCalledWith('capture-123');
   });
 
   it('devuelve 404 cuando no existe el detalle', async () => {
     mocks.getEdgeCaptureDetail.mockResolvedValue(null);
 
     const base = await startServer();
-    const response = await fetch(
-      `${base}/api/edge-captures/missing-id`,
-    );
+    const response = await fetch(`${base}/api/edge-captures/missing-id`);
 
     expect(response.status).toBe(404);
   });
@@ -156,24 +137,18 @@ describe('P4-2.3 API de consulta de capturas edge', () => {
     });
 
     const base = await startServer();
-    const response = await fetch(
-      `${base}/api/edge-captures/capture-123/image`,
-    );
+    const response = await fetch(`${base}/api/edge-captures/capture-123/image`);
 
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toBe('image/jpeg');
-    expect(Buffer.from(await response.arrayBuffer()).toString()).toBe(
-      'image-bytes',
-    );
+    expect(Buffer.from(await response.arrayBuffer()).toString()).toBe('image-bytes');
   });
 
   it('devuelve 404 si la imagen no existe', async () => {
     mocks.getEdgeCaptureImage.mockResolvedValue(null);
 
     const base = await startServer();
-    const response = await fetch(
-      `${base}/api/edge-captures/missing-id/image`,
-    );
+    const response = await fetch(`${base}/api/edge-captures/missing-id/image`);
 
     expect(response.status).toBe(404);
   });

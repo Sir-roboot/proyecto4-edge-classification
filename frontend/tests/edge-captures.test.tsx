@@ -1,20 +1,6 @@
-
 import "@testing-library/jest-dom/vitest";
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const api = vi.hoisted(() => ({
   buildApiUrl: vi.fn((path: string) => `/api${path}`),
@@ -48,22 +34,18 @@ beforeEach(() => {
 
 describe("Capturas Edge", () => {
   it("muestra carga, listado e imagen", async () => {
-    let resolveRequest:
-      | ((value: unknown) => void)
-      | undefined;
+    let resolveRequest: ((value: unknown) => void) | undefined;
 
     api.getJson.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
           resolveRequest = resolve;
-        }),
+        })
     );
 
     render(<EdgeCapturesPage />);
 
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Cargando capturas Edge",
-    );
+    expect(screen.getByRole("status")).toHaveTextContent("Cargando capturas Edge");
 
     resolveRequest?.({
       captures: [capture],
@@ -74,11 +56,9 @@ describe("Capturas Edge", () => {
     expect(await screen.findByText("Vehículo")).toBeInTheDocument();
     expect(screen.getByText("95.0%")).toBeInTheDocument();
 
-    expect(
-      screen.getByAltText("Captura capture-123"),
-    ).toHaveAttribute(
+    expect(screen.getByAltText("Captura capture-123")).toHaveAttribute(
       "src",
-      "/api/edge-captures/capture-123/image",
+      "/api/edge-captures/capture-123/image"
     );
   });
 
@@ -91,20 +71,16 @@ describe("Capturas Edge", () => {
 
     render(<EdgeCapturesPage />);
 
-    expect(
-      await screen.findByText("Todavía no hay capturas"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Todavía no hay capturas")).toBeInTheDocument();
   });
 
   it("muestra un error y permite reintentar", async () => {
-    api.getJson.mockRejectedValueOnce(
-      new Error("No se pudo conectar con el servidor."),
-    );
+    api.getJson.mockRejectedValueOnce(new Error("No se pudo conectar con el servidor."));
 
     render(<EdgeCapturesPage />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "No se pudo conectar con el servidor",
+      "No se pudo conectar con el servidor"
     );
 
     api.getJson.mockResolvedValueOnce({
@@ -113,9 +89,7 @@ describe("Capturas Edge", () => {
       offset: 0,
     });
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /Actualizar/i }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: /Actualizar/i }));
 
     expect(await screen.findByText("Vehículo")).toBeInTheDocument();
   });
@@ -134,23 +108,19 @@ describe("Capturas Edge", () => {
     fireEvent.click(
       await screen.findByRole("button", {
         name: "Consultar detalle",
-      }),
+      })
     );
 
     await waitFor(() => {
-      expect(api.getJson.mock.calls[1]?.[0]).toBe(
-        "/edge-captures/capture-123",
-      );
+      expect(api.getJson.mock.calls[1]?.[0]).toBe("/edge-captures/capture-123");
     });
 
     expect(
       await screen.findByRole("region", {
         name: "Detalle de captura",
-      }),
+      })
     ).toBeInTheDocument();
 
-    expect(
-      screen.getByText("a".repeat(64)),
-    ).toBeInTheDocument();
+    expect(screen.getByText("a".repeat(64))).toBeInTheDocument();
   });
 });

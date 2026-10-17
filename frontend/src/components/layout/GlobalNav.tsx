@@ -1,7 +1,6 @@
-import { LayoutDashboard, Search, Upload } from "lucide-react";
+import { Camera, LayoutDashboard, Search, Upload } from "lucide-react";
 import type { ComponentType, ReactNode, SVGProps } from "react";
 import { NavLink } from "react-router-dom";
-import { Camera, LayoutDashboard, Search, Upload } from "lucide-react";
 
 interface NavItem {
   label: string;
@@ -13,7 +12,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Tablero", to: "/dashboard", icon: LayoutDashboard },
   { label: "Buscar", to: "/search", icon: Search },
   { label: "Subir fotografías", to: "/upload", icon: Upload },
-  { label: "Capturas Edge", to: "/edge-captures", icon: Camera },
+  { label: "Capturas Edge", to: "/annotation/edge-captures", icon: Camera },
 ];
 
 /**

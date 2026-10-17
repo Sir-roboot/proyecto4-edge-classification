@@ -58,6 +58,7 @@ export { getDashboardSummary } from './dashboard.service.js';
 export {
   buildEdgeCaptureImageKey,
   createEdgeCaptureService,
+  getEdgeCaptureDetail,
   getEdgeCaptureImage,
   getEdgeCaptureList,
   ingestEdgeCapture,

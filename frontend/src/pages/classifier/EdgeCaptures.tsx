@@ -1,13 +1,4 @@
-
-import {
-  AlertCircle,
-  Camera,
-  Car,
-  Clock3,
-  Cpu,
-  RefreshCw,
-  UserRound,
-} from "lucide-react";
+import { AlertCircle, Camera, Car, Clock3, Cpu, RefreshCw, UserRound } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 import { buildApiUrl, getJson } from "@/api/client";
@@ -54,9 +45,7 @@ function formatDate(value: string): string {
 }
 
 function errorMessage(error: unknown): string {
-  return error instanceof Error
-    ? error.message
-    : "Ocurrió un error inesperado.";
+  return error instanceof Error ? error.message : "Ocurrió un error inesperado.";
 }
 
 export function EdgeCapturesPage(): JSX.Element {
@@ -73,11 +62,9 @@ export function EdgeCapturesPage(): JSX.Element {
     setError(null);
 
     try {
-      const result = await getJson(
-        "/edge-captures?limit=100&offset=0",
-        captureListSchema,
-        { signal },
-      );
+      const result = await getJson("/edge-captures?limit=100&offset=0", captureListSchema, {
+        signal,
+      });
 
       setCaptures(result.captures);
     } catch (cause) {
@@ -91,6 +78,7 @@ export function EdgeCapturesPage(): JSX.Element {
     }
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reloadKey triggers a manual refresh.
   useEffect(() => {
     const controller = new AbortController();
 
@@ -107,7 +95,7 @@ export function EdgeCapturesPage(): JSX.Element {
     try {
       const detail = await getJson(
         `/edge-captures/${encodeURIComponent(captureId)}`,
-        captureSchema,
+        captureSchema
       );
 
       setSelected(detail);
@@ -122,25 +110,17 @@ export function EdgeCapturesPage(): JSX.Element {
     <section className="edge-captures-page">
       <header className="edge-captures-header">
         <div>
-          <p className="edge-captures-eyebrow">
-            Clasificador en producción
-          </p>
+          <p className="edge-captures-eyebrow">Clasificador en producción</p>
 
           <h2>
             <Camera aria-hidden size={22} />
             Capturas Edge
           </h2>
 
-          <p>
-            Eventos enviados por dispositivos Edge con inferencia local.
-          </p>
+          <p>Eventos enviados por dispositivos Edge con inferencia local.</p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setReloadKey((value) => value + 1)}
-          disabled={loading}
-        >
+        <button type="button" onClick={() => setReloadKey((value) => value + 1)} disabled={loading}>
           <RefreshCw size={16} aria-hidden />
           Actualizar
         </button>
@@ -149,9 +129,7 @@ export function EdgeCapturesPage(): JSX.Element {
       {error && (
         <div role="alert" className="edge-captures-error">
           <AlertCircle size={18} />
-          <span>
-            No se pudieron cargar las capturas: {error}
-          </span>
+          <span>No se pudieron cargar las capturas: {error}</span>
         </div>
       )}
 
@@ -165,52 +143,36 @@ export function EdgeCapturesPage(): JSX.Element {
         <div className="edge-captures-state">
           <Camera size={28} />
           <strong>Todavía no hay capturas</strong>
-          <span>
-            Cuando la Raspberry envíe eventos, aparecerán aquí.
-          </span>
+          <span>Cuando la Raspberry envíe eventos, aparecerán aquí.</span>
         </div>
       )}
 
       {!loading && !error && captures.length > 0 && (
         <div className="edge-captures-grid">
           {captures.map((capture) => (
-            <article
-              className="edge-capture-card"
-              key={capture.capture_id}
-            >
+            <article className="edge-capture-card" key={capture.capture_id}>
               <img
-                src={buildApiUrl(
-                  `/edge-captures/${encodeURIComponent(
-                    capture.capture_id,
-                  )}/image`,
-                )}
+                src={buildApiUrl(`/edge-captures/${encodeURIComponent(capture.capture_id)}/image`)}
                 alt={`Captura ${capture.capture_id}`}
                 loading="lazy"
                 onError={(event) => {
-                  event.currentTarget.alt =
-                    "No se pudo cargar la imagen de esta captura";
+                  event.currentTarget.alt = "No se pudo cargar la imagen de esta captura";
                 }}
               />
 
               <div className="edge-capture-card-body">
                 <div className="edge-capture-card-title">
-                  <span
-                    className={`edge-capture-class ${capture.predicted_class}`}
-                  >
+                  <span className={`edge-capture-class ${capture.predicted_class}`}>
                     {capture.predicted_class === "car" ? (
                       <Car size={15} aria-hidden />
                     ) : (
                       <UserRound size={15} aria-hidden />
                     )}
 
-                    {capture.predicted_class === "car"
-                      ? "Vehículo"
-                      : "Persona"}
+                    {capture.predicted_class === "car" ? "Vehículo" : "Persona"}
                   </span>
 
-                  <strong>
-                    {(capture.confidence * 100).toFixed(1)}%
-                  </strong>
+                  <strong>{(capture.confidence * 100).toFixed(1)}%</strong>
                 </div>
 
                 <p>
@@ -249,17 +211,11 @@ export function EdgeCapturesPage(): JSX.Element {
       )}
 
       {selected && (
-        <section
-          className="edge-capture-detail"
-          aria-label="Detalle de captura"
-        >
+        <section className="edge-capture-detail" aria-label="Detalle de captura">
           <div className="edge-capture-detail-header">
             <h3>Detalle de captura</h3>
 
-            <button
-              type="button"
-              onClick={() => setSelected(null)}
-            >
+            <button type="button" onClick={() => setSelected(null)}>
               Cerrar
             </button>
           </div>
@@ -272,9 +228,7 @@ export function EdgeCapturesPage(): JSX.Element {
             <dd>{selected.predicted_class}</dd>
 
             <dt>Confianza</dt>
-            <dd>
-              {(selected.confidence * 100).toFixed(2)}%
-            </dd>
+            <dd>{(selected.confidence * 100).toFixed(2)}%</dd>
 
             <dt>Dispositivo</dt>
             <dd>{selected.device_id}</dd>
